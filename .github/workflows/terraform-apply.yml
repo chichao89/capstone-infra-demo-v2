@@ -1,8 +1,7 @@
 name: Terraform Apply
 #trigger test deployment
-on:
-  push:
-    branches: [ "main" ]
+on: workflow_dispatch
+
 
 env:            
   AWS_REGION: ap-southeast-1  
