@@ -24,8 +24,8 @@ resource "aws_ecs_task_definition" "register_app_task" {
       ],
       portMappings = [
         {
-          containerPort = 5000,
-          hostPort      = 5000
+          containerPort = 5001,
+          hostPort      = 5001
         }
       ]
     }
