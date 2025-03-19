@@ -1,10 +1,10 @@
 resource "aws_ecs_cluster" "register_app_repo" {
-  name = "register-app-repo"
+  name = "register-app-repo-cluster"
 }
 
 # ECS Task Definition
-resource "aws_ecs_task_definition" "flask_app_task" {
-  family                   = "flask-app-task"
+resource "aws_ecs_task_definition" "register_app_task" {
+  family                   = "register-app-task"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
   execution_role_arn       = aws_iam_role.ecs_execution_role.arn # Execution Role
@@ -14,13 +14,13 @@ resource "aws_ecs_task_definition" "flask_app_task" {
 
   container_definitions = jsonencode([
     {
-      name      = "flask-app-container",
-      image     = "${aws_ecr_repository.register_service.repository_url}:latest"
+      name      = "register-app-container",
+      image     = "${aws_ecr_repository.register_service_repo.repository_url}:latest"
       memory    = 512,
       cpu       = 256,
       essential = true,
       environment = [
-        { "name" : "AWS_REGION", "value" : "us-east-1" }
+        { "name" : "AWS_REGION", "value" : "ap-southeast-1" }
       ],
       portMappings = [
         {
@@ -33,10 +33,10 @@ resource "aws_ecs_task_definition" "flask_app_task" {
 }
 
 # ECS Fargate Service (No Load Balancer)
-resource "aws_ecs_service" "flask_app_service" {
-  name            = "flask-app-service"
+resource "aws_ecs_service" "register_app_service" {
+  name            = "register-app-service"
   cluster         = aws_ecs_cluster.register_app_repo.id
-  task_definition = aws_ecs_task_definition.flask_app_task.arn
+  task_definition = aws_ecs_task_definition.register_app_task.arn
   desired_count   = 1
   launch_type     = "FARGATE"
 
