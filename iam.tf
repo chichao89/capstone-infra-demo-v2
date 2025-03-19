@@ -81,7 +81,7 @@ resource "aws_iam_role_policy" "ecs_execution_role_policy" {
           "ecr:GetDownloadUrlForLayer",
           "ecr:BatchGetImage"
         ],
-        Resource = aws_ecr_repository.register_service.arn
+        Resource = aws_ecr_repository.register_service_repo.arn
       },
       {
         Effect   = "Allow",
