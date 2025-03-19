@@ -20,7 +20,8 @@ resource "aws_ecs_task_definition" "register_app_task" {
       cpu       = 256,
       essential = true,
       environment = [
-        { "name" : "AWS_REGION", "value" : "ap-southeast-1" }
+        { "name" : "AWS_REGION", "value" : "ap-southeast-1" },
+        { "name" : "DYNAMODB_TABLE", "value" : "Users" }
       ],
       portMappings = [
         {

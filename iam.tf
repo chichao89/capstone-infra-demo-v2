@@ -31,7 +31,7 @@ resource "aws_iam_policy" "dynamodb_access" {
           "dynamodb:Scan",
           "dynamodb:UpdateItem"
         ],
-        Resource = aws_dynamodb_table.users_table.arn
+        Resource = "${aws_dynamodb_table.users_table.arn}"
       }
     ]
   })
@@ -61,22 +61,22 @@ resource "aws_iam_role" "ecs_execution_role" {
   })
 }
 resource "aws_iam_role_policy" "ecs_execution_role_policy" {
-  name   = "ecs_execution_role_policy"
-  role   = aws_iam_role.ecs_execution_role.id
+  name = "ecs_execution_role_policy"
+  role = aws_iam_role.ecs_execution_role.id
 
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
       {
-        Effect   = "Allow",
-        Action   = [
+        Effect = "Allow",
+        Action = [
           "ecr:GetAuthorizationToken"
         ],
         Resource = "*"
       },
       {
-        Effect   = "Allow",
-        Action   = [
+        Effect = "Allow",
+        Action = [
           "ecr:BatchCheckLayerAvailability",
           "ecr:GetDownloadUrlForLayer",
           "ecr:BatchGetImage"
@@ -84,8 +84,8 @@ resource "aws_iam_role_policy" "ecs_execution_role_policy" {
         Resource = aws_ecr_repository.register_service_repo.arn
       },
       {
-        Effect   = "Allow",
-        Action   = [
+        Effect = "Allow",
+        Action = [
           "logs:CreateLogStream",
           "logs:PutLogEvents"
         ],
