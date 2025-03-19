@@ -60,3 +60,37 @@ resource "aws_iam_role" "ecs_execution_role" {
     ]
   })
 }
+resource "aws_iam_role_policy" "ecs_execution_role_policy" {
+  name   = "ecs_execution_role_policy"
+  role   = aws_iam_role.ecs_execution_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect   = "Allow",
+        Action   = [
+          "ecr:GetAuthorizationToken"
+        ],
+        Resource = "*"
+      },
+      {
+        Effect   = "Allow",
+        Action   = [
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage"
+        ],
+        Resource = aws_ecr_repository.register_service.arn
+      },
+      {
+        Effect   = "Allow",
+        Action   = [
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ],
+        Resource = "*"
+      }
+    ]
+  })
+}
