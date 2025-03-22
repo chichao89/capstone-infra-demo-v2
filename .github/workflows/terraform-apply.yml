@@ -38,12 +38,12 @@ jobs:
       run: terraform validate 
 
     - name: Terraform Plan
-      run: terraform plan -var="ecs_cluster_name=${{ secrets.TF_VAR_ECS_CLUSTER_NAME }}" \
-                          -var="ecs_task_family=${{ secrets.TF_VAR_ECS_TASK_FAMILY }}" \
-                          -var="ecs_service_name=${{ secrets.TF_VAR_ECS_SERVICE_NAME }}"
+      run: terraform plan -var="ecs_cluster_name=${{ vars.TF_VAR_ECS_CLUSTER_NAME }}" \
+                          -var="ecs_task_family=${{ vars.TF_VAR_ECS_TASK_FAMILY }}" \
+                          -var="ecs_service_name=${{ vars.TF_VAR_ECS_SERVICE_NAME }}"
 
     - name: Terraform Apply
-      run: terraform apply -var="ecs_cluster_name=${{ secrets.TF_VAR_ECS_CLUSTER_NAME }}" \
-                           -var="ecs_task_family=${{ secrets.TF_VAR_ECS_TASK_FAMILY }}" \
-                           -var="ecs_service_name=${{ secrets.TF_VAR_ECS_SERVICE_NAME }}" \
+      run: terraform apply -var="ecs_cluster_name=${{ vars.TF_VAR_ECS_CLUSTER_NAME }}" \
+                           -var="ecs_task_family=${{ vars.TF_VAR_ECS_TASK_FAMILY }}" \
+                           -var="ecs_service_name=${{ vars.TF_VAR_ECS_SERVICE_NAME }}" \
                            --auto-approve
