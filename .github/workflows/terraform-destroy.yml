@@ -46,7 +46,8 @@ jobs:
         echo "ECS Service Name: ${{ vars.TF_VAR_ECS_SERVICE_NAME }}"
 
     - name: Terraform Destroy
-      run: terraform destroy -auto-approve \
-        -var="ecs_cluster_name=${{ vars.TF_VAR_ECS_CLUSTER_NAME }}" \
-        -var="ecs_task_family=${{ vars.TF_VAR_ECS_TASK_FAMILY }}" \
-        -var="ecs_service_name=${{ vars.TF_VAR_ECS_SERVICE_NAME }}"
+      run: |
+        terraform destroy -auto-approve \
+          -var="ecs_cluster_name=${{ vars.TF_VAR_ECS_CLUSTER_NAME }}" \
+          -var="ecs_task_family=${{ vars.TF_VAR_ECS_TASK_FAMILY }}" \
+          -var="ecs_service_name=${{ vars.TF_VAR_ECS_SERVICE_NAME }}"
