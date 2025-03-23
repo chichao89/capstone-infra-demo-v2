@@ -25,7 +25,3 @@ variable "container_name" {
   description = "ecs container name"
   type        = string
 }
-variable "service_name" {
-  description = "service name"
-  type        = string
-}

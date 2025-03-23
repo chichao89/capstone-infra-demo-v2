@@ -32,7 +32,7 @@ resource "aws_ecs_task_definition" "app_task" {
   ])
 }
 resource "aws_ecs_service" "register_app_service" {
-  name            = var.service_name
+  name            = var.ecs_service_name
   cluster         = aws_ecs_cluster.app_cluster.id
   task_definition = aws_ecs_task_definition.app_task.arn
   desired_count   = 1
