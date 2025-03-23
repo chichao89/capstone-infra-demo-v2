@@ -59,18 +59,12 @@ jobs:
           -var="container_name=${{ vars.TF_VAR_CONTAINER_NAME }}" \
           --auto-approve
 
-    # ✅ Generate and validate Terraform Output JSON
-    - name: Generate Terraform Output JSON
+    # ✅ Store Terraform Output as a text file (instead of JSON)
+    - name: Generate Terraform Output as Text
       run: |
-        export TF_IN_AUTOMATION=1
-        terraform output -json | tee tf_outputs.json
-        cat -A tf_outputs.json  # Debugging: Check for unexpected characters
-        jq . tf_outputs.json > /dev/null || (echo "Invalid JSON format!" && exit 1)
+        terraform output > tf_outputs.txt
+        cat tf_outputs.txt  # Show output for debugging
 
-    # ✅ Reformat JSON before uploading
-    - name: Clean and Reformat JSON
-      run: jq . tf_outputs.json > tf_outputs_clean.json && mv tf_outputs_clean.json tf_outputs.json
-
-    # ✅ Upload Terraform Outputs to S3
+    # ✅ Upload Terraform Outputs to S3 as a text file
     - name: Upload Terraform Outputs to S3
-      run: aws s3 cp tf_outputs.json s3://${{ secrets.S3_BUCKET }}/${{ secrets.S3_OUTPUT_PATH }} --content-type application/json
+      run: aws s3 cp tf_outputs.txt s3://${{ secrets.S3_BUCKET }}/${{ secrets.S3_OUTPUT_PATH }} --content-type text/plain
