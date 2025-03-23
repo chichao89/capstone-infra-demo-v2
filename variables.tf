@@ -21,3 +21,7 @@ variable "dynamodb_table_name" {
   description = "DynamoDB table name"
   type        = string
 }
+variable "container_name" {
+  description = "ecs container name"
+  type        = string
+}

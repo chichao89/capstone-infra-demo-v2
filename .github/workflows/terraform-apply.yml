@@ -9,13 +9,14 @@ on:
         type: choice
         options:
           - staging
+
 env:            
   AWS_REGION: ap-southeast-1  
-  
+
 jobs:
   Terraform-Deploy:
     runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment }}  # Use selected environment
+    environment: ${{ github.event.inputs.environment }}
 
     steps:
     - name: Checkout Repository
@@ -26,7 +27,7 @@ jobs:
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region:  ${{ env.AWS_REGION }}
+        aws-region: ${{ env.AWS_REGION }}
 
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v2
@@ -42,9 +43,10 @@ jobs:
         terraform plan \
           -var="ecs_cluster_name=${{ vars.TF_VAR_ECS_CLUSTER_NAME }}" \
           -var="ecs_task_family=${{ vars.TF_VAR_ECS_TASK_FAMILY }}" \
-          -var="ecs_service_name=${{ vars.TF_VAR_ECS_SERVICE_NAME }}"\
+          -var="ecs_service_name=${{ vars.TF_VAR_ECS_SERVICE_NAME }}" \
           -var="environment=${{ vars.TF_VAR_ENVIRONMENT }}" \
-          -var="dynamodb_table_name=${{ vars.TF_VAR_DYNAMODB_TABLE_NAME }}"
+          -var="dynamodb_table_name=${{ vars.TF_VAR_DYNAMODB_TABLE_NAME }}" \
+          -var="container_name=${{ vars.TF_VAR_CONTAINER_NAME }}"
 
     - name: Terraform Apply
       run: |
@@ -53,6 +55,6 @@ jobs:
           -var="ecs_task_family=${{ vars.TF_VAR_ECS_TASK_FAMILY }}" \
           -var="ecs_service_name=${{ vars.TF_VAR_ECS_SERVICE_NAME }}" \
           -var="environment=${{ vars.TF_VAR_ENVIRONMENT }}" \
-          -var="dynamodb_table_name=${{ vars.TF_VAR_DYNAMODB_TABLE_NAME }}"\
+          -var="dynamodb_table_name=${{ vars.TF_VAR_DYNAMODB_TABLE_NAME }}" \
+          -var="container_name=${{ vars.TF_VAR_CONTAINER_NAME }}" \
           --auto-approve
-

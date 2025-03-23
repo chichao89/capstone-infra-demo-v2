@@ -43,15 +43,16 @@ jobs:
       run: |
         echo "ECS Cluster Name: ${{ vars.TF_VAR_ECS_CLUSTER_NAME }}"
         echo "ECS Task Family: ${{ vars.TF_VAR_ECS_TASK_FAMILY }}"
-        echo "ECS Service Name: ${{ vars.TF_VAR_ECS_SERVICE_NAME }}"
         echo "Environment: ${{ vars.TF_VAR_ENVIRONMENT }}"
         echo "DyanamoDB: ${{ vars.TF_VAR_DYNAMODB_TABLE_NAME }}"
+        echo "container_name: ${{ vars.TF_VAR_CONTAINER_NAME }}"
 
     - name: Terraform Destroy
       run: |
         terraform destroy -auto-approve \
           -var="ecs_cluster_name=${{ vars.TF_VAR_ECS_CLUSTER_NAME }}" \
           -var="ecs_task_family=${{ vars.TF_VAR_ECS_TASK_FAMILY }}" \
-          -var="ecs_service_name=${{ vars.TF_VAR_ECS_SERVICE_NAME }}"\
           -var="environment=${{ vars.TF_VAR_ENVIRONMENT }}" \
-          -var="dynamodb_table_name=${{ vars.TF_VAR_DYNAMODB_TABLE_NAME }}"
+          -var="dynamodb_table_name=${{ vars.TF_VAR_DYNAMODB_TABLE_NAME }}"\
+          -var="ecs_service_name=${{ vars.TF_VAR_ECS_SERVICE_NAME }}" \
+          -var="container_name=${{ vars.TF_VAR_CONTAINER_NAME }}"
