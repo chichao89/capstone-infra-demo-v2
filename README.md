@@ -1,7 +1,7 @@
 # capstone-infra-demo
 <br>
 <h1>Prerequisite</h1>
-
+<p>CI/CD with AWS ECR, ECS & Monitoring</p>
 <p>Create Environments</p>
 <ul>
   <li>Staging</li>
