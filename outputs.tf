@@ -32,3 +32,8 @@ output "ecs_service_arn" {
   description = "The ARN of the ECS service"
   value       = aws_ecs_service.register_app_service.id
 }
+
+output "ecr_repository" {
+  value = aws_ecr_repository.register_service_repo.name
+}
+

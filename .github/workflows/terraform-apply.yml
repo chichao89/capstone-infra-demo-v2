@@ -46,7 +46,8 @@ jobs:
           -var="ecs_service_name=${{ vars.TF_VAR_ECS_SERVICE_NAME }}" \
           -var="environment=${{ vars.TF_VAR_ENVIRONMENT }}" \
           -var="dynamodb_table_name=${{ vars.TF_VAR_DYNAMODB_TABLE_NAME }}" \
-          -var="container_name=${{ vars.TF_VAR_CONTAINER_NAME }}"
+          -var="container_name=${{ vars.TF_VAR_CONTAINER_NAME }}" \
+          -var="ecr_repository=${{ vars.TF_VAR_ECR_REPOSITORY }}"
 
     - name: Terraform Apply
       run: |
@@ -57,6 +58,7 @@ jobs:
           -var="environment=${{ vars.TF_VAR_ENVIRONMENT }}" \
           -var="dynamodb_table_name=${{ vars.TF_VAR_DYNAMODB_TABLE_NAME }}" \
           -var="container_name=${{ vars.TF_VAR_CONTAINER_NAME }}" \
+          -var="ecr_repository=${{ vars.TF_VAR_ECR_REPOSITORY }}" \
           --auto-approve
 
     # ✅ Store Terraform Output as a text file (instead of JSON)
