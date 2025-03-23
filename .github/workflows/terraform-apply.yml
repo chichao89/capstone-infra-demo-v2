@@ -1,37 +1,58 @@
 name: Terraform Apply
-#trigger test deployment
-on: workflow_dispatch
 
-
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Select environment"
+        required: true
+        type: choice
+        options:
+          - staging
 env:            
   AWS_REGION: ap-southeast-1  
-
+  
 jobs:
-  Terraform-CI:
+  Terraform-Deploy:
     runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}  # Use selected environment
 
     steps:
-    - name: Checkout
+    - name: Checkout Repository
       uses: actions/checkout@v3
     
-    - name: Configure AWS credentials
+    - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v1
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ env.AWS_REGION }}
+        aws-region:  ${{ env.AWS_REGION }}
 
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v2
-    
+
     - name: Terraform Init
       run: terraform init
-    
+
     - name: Terraform Validate
       run: terraform validate 
 
     - name: Terraform Plan
-      run: terraform plan
+      run: |
+        terraform plan \
+          -var="ecs_cluster_name=${{ vars.TF_VAR_ECS_CLUSTER_NAME }}" \
+          -var="ecs_task_family=${{ vars.TF_VAR_ECS_TASK_FAMILY }}" \
+          -var="ecs_service_name=${{ vars.TF_VAR_ECS_SERVICE_NAME }}"\
+          -var="environment=${{ vars.TF_VAR_ENVIRONMENT }}" \
+          -var="dynamodb_table_name=${{ vars.TF_VAR_DYNAMODB_TABLE_NAME }}"
 
     - name: Terraform Apply
-      run: terraform apply --auto-approve
+      run: |
+        terraform apply \
+          -var="ecs_cluster_name=${{ vars.TF_VAR_ECS_CLUSTER_NAME }}" \
+          -var="ecs_task_family=${{ vars.TF_VAR_ECS_TASK_FAMILY }}" \
+          -var="ecs_service_name=${{ vars.TF_VAR_ECS_SERVICE_NAME }}" \
+          -var="environment=${{ vars.TF_VAR_ENVIRONMENT }}" \
+          -var="dynamodb_table_name=${{ vars.TF_VAR_DYNAMODB_TABLE_NAME }}"\
+          --auto-approve
+
