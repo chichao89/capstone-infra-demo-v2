@@ -11,7 +11,7 @@ on:
           - staging
 
 env:            
-  AWS_REGION: ap-southeast-1  
+  AWS_REGION: ap-southeast-1
 
 jobs:
   Terraform-Deploy:
@@ -58,3 +58,9 @@ jobs:
           -var="dynamodb_table_name=${{ vars.TF_VAR_DYNAMODB_TABLE_NAME }}" \
           -var="container_name=${{ vars.TF_VAR_CONTAINER_NAME }}" \
           --auto-approve
+
+    - name: Generate Terraform Output JSON
+      run: terraform output -json > tf_outputs.json
+
+    - name: Upload Terraform Outputs to S3
+      run: aws s3 cp tf_outputs.json s3://${{ secrets.S3_BUCKET }}/${{ secrets.S3_OUTPUT_PATH }}
