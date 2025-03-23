@@ -62,8 +62,9 @@ jobs:
     # ✅ Generate and validate Terraform Output JSON
     - name: Generate Terraform Output JSON
       run: |
-        terraform output -json > tf_outputs.json
-        cat tf_outputs.json  # Show output for debugging
+        export TF_IN_AUTOMATION=1
+        terraform output -json | tee tf_outputs.json
+        cat -A tf_outputs.json  # Debugging: Check for unexpected characters
         jq . tf_outputs.json > /dev/null || (echo "Invalid JSON format!" && exit 1)
 
     # ✅ Reformat JSON before uploading
