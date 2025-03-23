@@ -46,6 +46,7 @@ jobs:
         echo "ECS Service Name: ${{ vars.TF_VAR_ECS_SERVICE_NAME }}"
         echo "Environment: ${{ vars.TF_VAR_ENVIRONMENT }}"
         echo "DyanamoDB: ${{ vars.TF_VAR_DYNAMODB_TABLE_NAME }}"
+        echo "container_name: ${{ vars.TF_VAR_CONTAINER_NAME }}"
 
     - name: Terraform Destroy
       run: |
@@ -55,3 +56,4 @@ jobs:
           -var="ecs_service_name=${{ vars.TF_VAR_ECS_SERVICE_NAME }}"\
           -var="environment=${{ vars.TF_VAR_ENVIRONMENT }}" \
           -var="dynamodb_table_name=${{ vars.TF_VAR_DYNAMODB_TABLE_NAME }}"
+          -var="container_name=${{ vars.TF_VAR_CONTAINER_NAME }}"

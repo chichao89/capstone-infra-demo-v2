@@ -13,7 +13,7 @@ resource "aws_ecs_task_definition" "app_task" {
 
   container_definitions = jsonencode([
     {
-      name      = var.ecs_service_name,
+      name      =  var.container_name,
       image     = "${aws_ecr_repository.register_service_repo.repository_url}:latest",
       memory    = 512,
       cpu       = 256,
@@ -30,4 +30,17 @@ resource "aws_ecs_task_definition" "app_task" {
       ]
     }
   ])
+}
+resource "aws_ecs_service" "register_app_service" {
+  name            = var.service_name
+  cluster         = aws_ecs_cluster.app_cluster.id
+  task_definition = aws_ecs_task_definition.app_task.arn
+  desired_count   = 1
+  launch_type     = "FARGATE"
+
+  network_configuration {
+    subnets          = module.vpc.public_subnets
+    security_groups  = [aws_security_group.ecs_sg.id]
+    assign_public_ip = true # ⚠️ Assigns a Public IP to the ECS Service
+  }
 }
