@@ -70,7 +70,8 @@ jobs:
 
     # ✅ Debugging Logs
     - name: Debugging Logs
-      run: echo "Uploading Terraform outputs to: s3://${{ vars.S3_BUCKET }}/terraform/ce8-coaching-18/${{ github.event.inputs.environment }}/tf_output"
+      run: | 
+       echo "Uploading Terraform outputs to: s3://${{ vars.S3_BUCKET }}/terraform/ce8-coaching-18/${{ github.event.inputs.environment }}/tf_output"
 
     # ✅ Upload Terraform Outputs to S3
     - name: Upload Terraform Outputs to S3
