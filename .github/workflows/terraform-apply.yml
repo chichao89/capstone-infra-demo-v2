@@ -11,7 +11,7 @@ on:
           - staging
 
 env:            
-  AWS_REGION: ap-southeast-1  
+  AWS_REGION: ap-southeast-1
 
 jobs:
   Terraform-Deploy:
@@ -46,7 +46,8 @@ jobs:
           -var="ecs_service_name=${{ vars.TF_VAR_ECS_SERVICE_NAME }}" \
           -var="environment=${{ vars.TF_VAR_ENVIRONMENT }}" \
           -var="dynamodb_table_name=${{ vars.TF_VAR_DYNAMODB_TABLE_NAME }}" \
-          -var="container_name=${{ vars.TF_VAR_CONTAINER_NAME }}"
+          -var="container_name=${{ vars.TF_VAR_CONTAINER_NAME }}" \
+          -var="ecr_repository=${{ vars.TF_VAR_ECR_REPOSITORY }}"
 
     - name: Terraform Apply
       run: |
@@ -57,4 +58,15 @@ jobs:
           -var="environment=${{ vars.TF_VAR_ENVIRONMENT }}" \
           -var="dynamodb_table_name=${{ vars.TF_VAR_DYNAMODB_TABLE_NAME }}" \
           -var="container_name=${{ vars.TF_VAR_CONTAINER_NAME }}" \
+          -var="ecr_repository=${{ vars.TF_VAR_ECR_REPOSITORY }}" \
           --auto-approve
+
+    # ✅ Store Terraform Output as a text file (instead of JSON)
+    - name: Generate Terraform Output as Text
+      run: |
+        terraform output > tf_outputs.txt
+        cat tf_outputs.txt  # Show output for debugging
+
+    # ✅ Upload Terraform Outputs to S3 as a text file
+    - name: Upload Terraform Outputs to S3
+      run: aws s3 cp tf_outputs.txt s3://${{ secrets.S3_BUCKET }}/${{ secrets.S3_OUTPUT_PATH }} --content-type text/plain
