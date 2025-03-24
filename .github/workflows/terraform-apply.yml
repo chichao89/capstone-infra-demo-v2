@@ -9,6 +9,7 @@ on:
         type: choice
         options:
           - staging
+          - production  # Added production option
 
 env:            
   AWS_REGION: ap-southeast-1
@@ -61,12 +62,18 @@ jobs:
           -var="ecr_repository=${{ vars.TF_VAR_ECR_REPOSITORY }}" \
           --auto-approve
 
-    # ✅ Store Terraform Output as a text file (instead of JSON)
+    # ✅ Store Terraform Output as a text file
     - name: Generate Terraform Output as Text
       run: |
         terraform output > tf_outputs.txt
         cat tf_outputs.txt  # Show output for debugging
 
-    # ✅ Upload Terraform Outputs to S3 as a text file
+    # ✅ Debugging Logs
+    - name: Debugging Logs
+      run: echo "Uploading Terraform outputs to: s3://${{ vars.S3_BUCKET }}/terraform/ce8-coaching-18/${{ github.event.inputs.environment }}/tf_output"
+
+    # ✅ Upload Terraform Outputs to S3
     - name: Upload Terraform Outputs to S3
-      run: aws s3 cp tf_outputs.txt s3://${{ vars.S3_BUCKET }}/${{ vars.S3_OUTPUT_PATH }} --content-type text/plain
+      run: |
+        OUTPUT_PATH="terraform/ce8-coaching-18/${{ github.event.inputs.environment }}/tf_output"
+        aws s3 cp tf_outputs.txt s3://${{ vars.S3_BUCKET }}/${OUTPUT_PATH} --content-type text/plain
