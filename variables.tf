@@ -25,3 +25,9 @@ variable "container_name" {
   description = "ecs container name"
   type        = string
 }
+
+variable "ecr_repository" {
+  description = "Name of the ECR repository"
+  type        = string
+  default     = "group2-register-service-ecr-repo" # Optional: Default value
+}
