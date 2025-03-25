@@ -30,30 +30,28 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ env.AWS_REGION }}
 
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v2
-      with:
-        terraform_wrapper: false
-
-    - name: Terraform Init
-      run: terraform init
-
-    - name: Debug Variables
+    - name: Terraform Init with Dynamic Backend Config
       run: |
-        echo "ECS Cluster Name: ${{ vars.TF_VAR_ECS_CLUSTER_NAME }}"
-        echo "ECS Task Family: ${{ vars.TF_VAR_ECS_TASK_FAMILY }}"
-        echo "Environment: ${{ vars.TF_VAR_ENVIRONMENT }}"
-        echo "DyanamoDB: ${{ vars.TF_VAR_DYNAMODB_TABLE_NAME }}"
-        echo "container_name: ${{ vars.TF_VAR_CONTAINER_NAME }}"
-        echo "ECR_Repository=${{ vars.TF_VAR_ECR_REPOSITORY }}"
+        rm -rf .terraform  # ✅ Ensures correct backend is used
+        terraform init \
+          -reconfigure \
+          -backend-config="key=terraform/ce8-coaching-18/${{ github.event.inputs.environment }}/terraform.tfstate"
+
+    - name: Debug Terraform State
+      run: |
+        echo "Checking Terraform state for environment: ${{ github.event.inputs.environment }}"
+        terraform state list  # ✅ Verify which resources exist
+
+    - name: Terraform Refresh
+      run: terraform refresh  # ✅ Sync Terraform state with AWS
 
     - name: Terraform Destroy
       run: |
         terraform destroy -auto-approve \
+          -var="environment=${{ github.event.inputs.environment }}" \
           -var="ecs_cluster_name=${{ vars.TF_VAR_ECS_CLUSTER_NAME }}" \
           -var="ecs_task_family=${{ vars.TF_VAR_ECS_TASK_FAMILY }}" \
-          -var="environment=${{ vars.TF_VAR_ENVIRONMENT }}" \
           -var="dynamodb_table_name=${{ vars.TF_VAR_DYNAMODB_TABLE_NAME }}" \
           -var="ecs_service_name=${{ vars.TF_VAR_ECS_SERVICE_NAME }}" \
           -var="container_name=${{ vars.TF_VAR_CONTAINER_NAME }}" \
-          -var="ecr_repository=${{ vars.TF_VAR_ECR_REPOSITORY }}" 
+          -var="ecr_repository=${{ vars.TF_VAR_ECR_REPOSITORY }}"
