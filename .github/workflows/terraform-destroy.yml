@@ -8,9 +8,8 @@ on:
         required: true
         type: choice
         options:
-          - dev
           - staging
-          - prod
+          - production
 
 env:            
   AWS_REGION: ap-southeast-1  
@@ -21,10 +20,10 @@ jobs:
     environment: ${{ github.event.inputs.environment }}
 
     steps:
-    - name: Checkout
+    - name: Checkout Repository
       uses: actions/checkout@v3
 
-    - name: Configure AWS credentials
+    - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v1
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -36,8 +35,12 @@ jobs:
       with:
         terraform_wrapper: false
 
-    - name: Terraform Init
-      run: terraform init
+    - name: Terraform Init with Dynamic Backend Config
+      run: |
+        rm -rf .terraform  # ✅ Ensures correct backend is used
+        terraform init \
+          -reconfigure \
+          -backend-config="key=terraform/ce8-coaching-18/${{ github.event.inputs.environment }}/terraform.tfstate"
 
     - name: Debug Variables
       run: |
@@ -45,8 +48,8 @@ jobs:
         echo "ECS Task Family: ${{ vars.TF_VAR_ECS_TASK_FAMILY }}"
         echo "Environment: ${{ vars.TF_VAR_ENVIRONMENT }}"
         echo "DyanamoDB: ${{ vars.TF_VAR_DYNAMODB_TABLE_NAME }}"
-        echo "container_name: ${{ vars.TF_VAR_CONTAINER_NAME }}"
-        echo "ECR_Repository=${{ vars.TF_VAR_ECR_REPOSITORY }}"
+        echo "Container Name: ${{ vars.TF_VAR_CONTAINER_NAME }}"
+        echo "ECR Repository: ${{ vars.TF_VAR_ECR_REPOSITORY }}"
 
     - name: Terraform Destroy
       run: |
@@ -57,4 +60,4 @@ jobs:
           -var="dynamodb_table_name=${{ vars.TF_VAR_DYNAMODB_TABLE_NAME }}" \
           -var="ecs_service_name=${{ vars.TF_VAR_ECS_SERVICE_NAME }}" \
           -var="container_name=${{ vars.TF_VAR_CONTAINER_NAME }}" \
-          -var="ecr_repository=${{ vars.TF_VAR_ECR_REPOSITORY }}" 
+          -var="ecr_repository=${{ vars.TF_VAR_ECR_REPOSITORY }}"
