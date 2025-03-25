@@ -8,9 +8,8 @@ on:
         required: true
         type: choice
         options:
-          - dev
           - staging
-          - prod
+          - production
 
 env:            
   AWS_REGION: ap-southeast-1  
