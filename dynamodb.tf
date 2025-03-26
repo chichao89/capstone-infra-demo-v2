@@ -1,5 +1,5 @@
 resource "aws_dynamodb_table" "users_table" {
-  name         = "${var.dynamodb_table_name}" # Dynamic table name
+  name         = "${var.environment}-${var.dynamodb_table_name}" # Dynamic table name
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "username"
 
@@ -9,7 +9,7 @@ resource "aws_dynamodb_table" "users_table" {
   }
 
   tags = {
-    Name        = "${var.dynamodb_table_name}-${var.environment}"
+    Name        = "${var.environment}-${var.dynamodb_table_name}"
     Environment = var.environment
   }
 }

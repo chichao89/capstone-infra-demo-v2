@@ -13,14 +13,14 @@ resource "aws_ecs_task_definition" "app_task" {
 
   container_definitions = jsonencode([
     {
-      name      =  "${var.container_name}",
+      name      = "${var.container_name}",
       image     = "${aws_ecr_repository.register_service_repo.repository_url}:latest",
       memory    = 512,
       cpu       = 256,
       essential = true,
       environment = [
         { "name" : "AWS_REGION", "value" : "ap-southeast-1" },
-        { "name" : "DYNAMODB_TABLE", "value" : "${var.dynamodb_table_name}-${var.environment}" }
+        { "name" : "DYNAMODB_TABLE", "value" : "${var.environment}-${var.dynamodb_table_name}" }
       ],
       portMappings = [
         {
