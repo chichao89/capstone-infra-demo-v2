@@ -6,13 +6,13 @@ on:
       environment:
         description: "Select environment"
         required: true
-        type: string  # Input type should be string
+        type: choice
+        options:
+          - staging
+          - production  # Added production option
 
 env:
   AWS_REGION: ap-southeast-1  # Set region statically if fixed for both environments
-  S3_BUCKET: ${{ secrets.S3_BUCKET }}  # Store the S3 bucket name in GitHub Secrets
-  OUTPUT_PATH: terraform/ce8-coaching-18/${{ github.event.inputs.environment }}/tf_output  # Path for the output file
-  TF_OUTPUT_FILE: tf_outputs.txt  # Define the output file name
 
 jobs:
   Terraform-Deploy:
@@ -28,52 +28,76 @@ jobs:
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ env.AWS_REGION }}  # Region passed statically
+        aws-region: ${{ env.AWS_REGION }}
 
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v2
 
-    # Initialize Terraform with Backend Config
-    - name: Terraform Init
+    # Define environment-specific variables dynamically
+    - name: Set environment-specific variables
+      run: |
+        if [ "${{ github.event.inputs.environment }}" == "staging" ]; then
+          echo "TF_VAR_ECS_CLUSTER_NAME=staging-cluster" >> $GITHUB_ENV
+          echo "TF_VAR_ECS_TASK_FAMILY=staging-task-family" >> $GITHUB_ENV
+          echo "TF_VAR_ECS_SERVICE_NAME=staging-service" >> $GITHUB_ENV
+          echo "TF_VAR_DYNAMODB_TABLE_NAME=staging-dynamodb-table" >> $GITHUB_ENV
+          echo "TF_VAR_CONTAINER_NAME=staging-container" >> $GITHUB_ENV
+          echo "TF_VAR_ECR_REPOSITORY=staging-repository" >> $GITHUB_ENV
+
+        elif [ "${{ github.event.inputs.environment }}" == "production" ]; then
+          echo "TF_VAR_ECS_CLUSTER_NAME=production-cluster" >> $GITHUB_ENV
+          echo "TF_VAR_ECS_TASK_FAMILY=production-task-family" >> $GITHUB_ENV
+          echo "TF_VAR_ECS_SERVICE_NAME=production-service" >> $GITHUB_ENV
+          echo "TF_VAR_DYNAMODB_TABLE_NAME=production-dynamodb-table" >> $GITHUB_ENV
+          echo "TF_VAR_CONTAINER_NAME=production-container" >> $GITHUB_ENV
+          echo "TF_VAR_ECR_REPOSITORY=production-repository" >> $GITHUB_ENV
+
+        fi
+
+    - name: Terraform Init with Dynamic Backend Config
       run: |
         terraform init \
-          -backend-config="bucket=${{ secrets.S3_BUCKET }}" \
-          -backend-config="key=terraform/ce8-coaching-18/${{ github.event.inputs.environment }}/terraform.tfstate" \
-          -backend-config="region=${{ env.AWS_REGION }}"
-
-    # Select Terraform Workspace (Automatically selects or creates the workspace for the environment)
-    - name: Terraform Workspace Select
-      run: |
-        terraform workspace select ${{ github.event.inputs.environment }} || terraform workspace new ${{ github.event.inputs.environment }}
+          -backend-config="key=terraform/ce8-coaching-18/${{ github.event.inputs.environment }}/terraform.tfstate"
 
     - name: Terraform Validate
-      run: terraform validate
+      run: terraform validate 
 
-    # Terraform Plan using the corresponding tfvars file for the selected environment
     - name: Terraform Plan
       run: |
         terraform plan \
-          -var-file="environments/${{ github.event.inputs.environment }}.tfvars"  # Pass the corresponding .tfvars file
+          -var="ecs_cluster_name=${{ env.TF_VAR_ECS_CLUSTER_NAME }}" \
+          -var="ecs_task_family=${{ env.TF_VAR_ECS_TASK_FAMILY }}" \
+          -var="ecs_service_name=${{ env.TF_VAR_ECS_SERVICE_NAME }}" \
+          -var="environment=${{ github.event.inputs.environment }}" \
+          -var="dynamodb_table_name=${{ env.TF_VAR_DYNAMODB_TABLE_NAME }}" \
+          -var="container_name=${{ env.TF_VAR_CONTAINER_NAME }}" \
+          -var="ecr_repository=${{ env.TF_VAR_ECR_REPOSITORY }}" 
 
-    # Apply the changes using the corresponding tfvars file for the selected environment
     - name: Terraform Apply
       run: |
         terraform apply \
-          -var-file="environments/${{ github.event.inputs.environment }}.tfvars"  # Pass the corresponding .tfvars file \
+          -var="ecs_cluster_name=${{ env.TF_VAR_ECS_CLUSTER_NAME }}" \
+          -var="ecs_task_family=${{ env.TF_VAR_ECS_TASK_FAMILY }}" \
+          -var="ecs_service_name=${{ env.TF_VAR_ECS_SERVICE_NAME }}" \
+          -var="environment=${{ github.event.inputs.environment }}" \
+          -var="dynamodb_table_name=${{ env.TF_VAR_DYNAMODB_TABLE_NAME }}" \
+          -var="container_name=${{ env.TF_VAR_CONTAINER_NAME }}" \
+          -var="ecr_repository=${{ env.TF_VAR_ECR_REPOSITORY }}" \
           --auto-approve
 
     # ✅ Store Terraform Output as a text file
     - name: Generate Terraform Output as Text
       run: |
-        terraform output > ${{ env.TF_OUTPUT_FILE }}  # Use the environment variable for the output file
-        cat ${{ env.TF_OUTPUT_FILE }}  # Show output for debugging
+        terraform output > tf_outputs.txt
+        cat tf_outputs.txt  # Show output for debugging
 
     # ✅ Debugging Logs
     - name: Debugging Logs
       run: | 
-        echo "Uploading Terraform outputs to: s3://${{ env.S3_BUCKET }}/${{ env.OUTPUT_PATH }}"
+        echo "Uploading Terraform outputs to: s3://${{ secrets.S3_BUCKET }}/terraform/ce8-coaching-18/${{ github.event.inputs.environment }}/tf_output"
 
     # ✅ Upload Terraform Outputs to S3
     - name: Upload Terraform Outputs to S3
       run: |
-        aws s3 cp ${{ env.TF_OUTPUT_FILE }} s3://${{ env.S3_BUCKET }}/${{ env.OUTPUT_PATH }} --content-type text/plain
+        OUTPUT_PATH="terraform/ce8-coaching-18/${{ github.event.inputs.environment }}/tf_output"
+        aws s3 cp tf_outputs.txt s3://${{ secrets.S3_BUCKET }}/${OUTPUT_PATH} --content-type text/plain
