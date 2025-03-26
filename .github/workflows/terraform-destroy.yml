@@ -41,43 +41,26 @@ jobs:
           -backend-config="key=terraform/ce8-coaching-18/${{ github.event.inputs.environment }}/terraform.tfstate" \
           -backend-config="region=${{ env.AWS_REGION }}"
 
-    - name: Verify State Exists
-      run: |
-        aws s3 ls s3://${{ secrets.S3_BUCKET }}/terraform/ce8-coaching-18/${{ github.event.inputs.environment }}/terraform.tfstate || \
-        (echo "::error::State file missing for ${{ github.event.inputs.environment }}"; exit 1)
-
-    - name: Select Workspace
-      run: |
-        terraform workspace select ${{ github.event.inputs.environment }} || \
-        terraform workspace new ${{ github.event.inputs.environment }}
-
-    - name: Set Environment Variables
+    - name: Set Prefixed Variables from Secrets
       run: |
         ENV_PREFIX="${{ github.event.inputs.environment }}"
-        echo "TF_VAR_ecs_cluster_name=${ENV_PREFIX}-${{ env.TF_VAR_ECS_CLUSTER_NAME }}" >> $GITHUB_ENV
-        echo "TF_VAR_ecs_task_family=${ENV_PREFIX}-${{ env.TF_VAR_ECS_TASK_FAMILY }}" >> $GITHUB_ENV
-        echo "TF_VAR_dynamodb_table_name=${ENV_PREFIX}-${{ env.TF_VAR_DYNAMODB_TABLE_NAME }}" >> $GITHUB_ENV
-        echo "TF_VAR_ecs_service_name=${ENV_PREFIX}-${{ env.TF_VAR_ECS_SERVICE_NAME }}" >> $GITHUB_ENV
-        echo "TF_VAR_container_name=${ENV_PREFIX}-${{ env.TF_VAR_CONTAINER_NAME }}" >> $GITHUB_ENV
-        echo "TF_VAR_ecr_repository=${ENV_PREFIX}-${{ env.TF_VAR_ECR_REPOSITORY }}" >> $GITHUB_ENV
+        echo "TF_VAR_ecs_cluster_name=${ENV_PREFIX}-${{ secrets.TF_VAR_ECS_CLUSTER_NAME }}" >> $GITHUB_ENV
+        echo "TF_VAR_ecs_task_family=${ENV_PREFIX}-${{ secrets.TF_VAR_ECS_TASK_FAMILY }}" >> $GITHUB_ENV
+        echo "TF_VAR_dynamodb_table_name=${ENV_PREFIX}-${{ secrets.TF_VAR_DYNAMODB_TABLE_NAME }}" >> $GITHUB_ENV
+        echo "TF_VAR_ecs_service_name=${ENV_PREFIX}-${{ secrets.TF_VAR_ECS_SERVICE_NAME }}" >> $GITHUB_ENV
+        echo "TF_VAR_container_name=${ENV_PREFIX}-${{ secrets.TF_VAR_CONTAINER_NAME }}" >> $GITHUB_ENV
+        echo "TF_VAR_ecr_repository=${ENV_PREFIX}-${{ secrets.TF_VAR_ECR_REPOSITORY }}" >> $GITHUB_ENV
         echo "TF_VAR_environment=${ENV_PREFIX}" >> $GITHUB_ENV
 
-    - name: Validate State Contents
+    - name: Validate Variables
       run: |
-        echo "Workspace: $(terraform workspace show)"
-        terraform state list
-        terraform show -no-color
+        echo "ECS Cluster: ${{ env.TF_VAR_ecs_cluster_name }}"
+        echo "Task Family: ${{ env.TF_VAR_ecs_task_family }}"
+        echo "DynamoDB Table: ${{ env.TF_VAR_dynamodb_table_name }}"
+        echo "ECS Service: ${{ env.TF_VAR_ecs_service_name }}"
+        echo "Container: ${{ env.TF_VAR_container_name }}"
+        echo "ECR Repo: ${{ env.TF_VAR_ecr_repository }}"
+        
 
-    - name: Terraform Destroy Plan
-      run: terraform plan -destroy -out=tfplan
-
-    - name: Apply Destruction
-      run: terraform apply -auto-approve tfplan
-
-    - name: Cleanup Workspace
-      if: always()
-      run: |
-        terraform workspace select default
-        terraform workspace delete ${{ github.event.inputs.environment }} --force || true
-        rm -rf .terraform
-        rm -f tfplan
+    - name: Terraform Destroy
+      run: terraform destroy -auto-approve
