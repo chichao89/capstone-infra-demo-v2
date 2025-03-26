@@ -6,7 +6,7 @@ on:
       environment:
         description: "Select environment"
         required: true
-        type: string  # Input type should be string, workspace will select based on it
+        type: string  # Input type should be string
 
 env:
   AWS_REGION: ap-southeast-1  # Set region statically if fixed for both environments
@@ -33,18 +33,18 @@ jobs:
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v2
 
-    # Select Terraform Workspace (Automatically selects or creates the workspace for the environment)
-    - name: Terraform Workspace Select
-      run: |
-        terraform workspace select ${{ github.event.inputs.environment }} || terraform workspace new ${{ github.event.inputs.environment }}
-
-    # Initialize Terraform with Dynamic Backend Config
-    - name: Terraform Init with Dynamic Backend Config
+    # Initialize Terraform with Backend Config
+    - name: Terraform Init
       run: |
         terraform init \
           -backend-config="bucket=${{ secrets.S3_BUCKET }}" \
           -backend-config="key=terraform/ce8-coaching-18/${{ github.event.inputs.environment }}/terraform.tfstate" \
           -backend-config="region=${{ env.AWS_REGION }}"
+
+    # Select Terraform Workspace (Automatically selects or creates the workspace for the environment)
+    - name: Terraform Workspace Select
+      run: |
+        terraform workspace select ${{ github.event.inputs.environment }} || terraform workspace new ${{ github.event.inputs.environment }}
 
     - name: Terraform Validate
       run: terraform validate
@@ -53,13 +53,13 @@ jobs:
     - name: Terraform Plan
       run: |
         terraform plan \
-          -var-file="environments/${{ github.event.inputs.environment }}.tfvars"
+          -var-file="environments/${{ github.event.inputs.environment }}.tfvars"  # Pass the corresponding .tfvars file
 
     # Apply the changes using the corresponding tfvars file for the selected environment
     - name: Terraform Apply
       run: |
         terraform apply \
-          -var-file="environments/${{ github.event.inputs.environment }}.tfvars" \
+          -var-file="environments/${{ github.event.inputs.environment }}.tfvars"  # Pass the corresponding .tfvars file \
           --auto-approve
 
     # ✅ Store Terraform Output as a text file
