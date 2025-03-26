@@ -39,4 +39,49 @@ jobs:
       run: |
         rm -rf .terraform  # ✅ Ensures correct backend is used
         terraform init \
-          -backend-config="key=terraform/ce8-coaching-18/${{ github.event.inputs.environment }}/terraform.tfstate
+          -backend-config="key=terraform/ce8-coaching-18/${{ github.event.inputs.environment }}/terraform.tfstate"
+
+    - name: Select Terraform Workspace
+      run: |
+        terraform workspace select ${{ github.event.inputs.environment }} || terraform workspace new ${{ github.event.inputs.environment }}
+
+    - name: Debug Terraform Workspace
+      run: |
+        echo "Current Terraform Workspace:"
+        terraform workspace show
+
+    - name: Show Terraform State List
+      run: |
+        echo "Checking Terraform State:"
+        terraform state list || echo "No state found!"
+
+    - name: Set Terraform Variables
+      run: |
+        echo "TF_VAR_ECS_CLUSTER_NAME=${{ github.event.inputs.environment }}-ecs-cluster" >> $GITHUB_ENV
+        echo "TF_VAR_ECS_TASK_FAMILY=${{ github.event.inputs.environment }}-ecs-task-family" >> $GITHUB_ENV
+        echo "TF_VAR_ENVIRONMENT=${{ github.event.inputs.environment }}" >> $GITHUB_ENV
+        echo "TF_VAR_DYNAMODB_TABLE_NAME=${{ github.event.inputs.environment }}-dynamodb-table" >> $GITHUB_ENV
+        echo "TF_VAR_ECS_SERVICE_NAME=${{ github.event.inputs.environment }}-ecs-service" >> $GITHUB_ENV
+        echo "TF_VAR_CONTAINER_NAME=${{ github.event.inputs.environment }}-container" >> $GITHUB_ENV
+        echo "TF_VAR_ECR_REPOSITORY=${{ github.event.inputs.environment }}-ecr-repo" >> $GITHUB_ENV
+
+    - name: Debug Variables
+      run: |
+        echo "ECS Cluster Name: ${{ env.TF_VAR_ECS_CLUSTER_NAME }}"
+        echo "ECS Task Family: ${{ env.TF_VAR_ECS_TASK_FAMILY }}"
+        echo "Environment: ${{ env.TF_VAR_ENVIRONMENT }}"
+        echo "DynamoDB Table: ${{ env.TF_VAR_DYNAMODB_TABLE_NAME }}"
+        echo "Container Name: ${{ env.TF_VAR_CONTAINER_NAME }}"
+        echo "ECR Repository: ${{ env.TF_VAR_ECR_REPOSITORY }}"
+
+    - name: Terraform Destroy
+      run: |
+        terraform workspace select ${{ github.event.inputs.environment }}
+        terraform destroy -auto-approve \
+          -var="ecs_cluster_name=${{ env.TF_VAR_ECS_CLUSTER_NAME }}" \
+          -var="ecs_task_family=${{ env.TF_VAR_ECS_TASK_FAMILY }}" \
+          -var="environment=${{ env.TF_VAR_ENVIRONMENT }}" \
+          -var="dynamodb_table_name=${{ env.TF_VAR_DYNAMODB_TABLE_NAME }}" \
+          -var="ecs_service_name=${{ env.TF_VAR_ECS_SERVICE_NAME }}" \
+          -var="container_name=${{ env.TF_VAR_CONTAINER_NAME }}" \
+          -var="ecr_repository=${{ env.TF_VAR_ECR_REPOSITORY }}"
