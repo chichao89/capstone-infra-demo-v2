@@ -42,12 +42,26 @@ jobs:
           -reconfigure \
           -backend-config="key=terraform/ce8-coaching-18/${{ github.event.inputs.environment }}/terraform.tfstate"
 
+    - name: Select Terraform Workspace
+      run: |
+        terraform workspace select ${{ github.event.inputs.environment }} || terraform workspace new ${{ github.event.inputs.environment }}
+
+    - name: Set Terraform Variables
+      run: |
+        echo "TF_VAR_ECS_CLUSTER_NAME=${{ github.event.inputs.environment }}-ecs-cluster" >> $GITHUB_ENV
+        echo "TF_VAR_ECS_TASK_FAMILY=${{ github.event.inputs.environment }}-ecs-task-family" >> $GITHUB_ENV
+        echo "TF_VAR_ENVIRONMENT=${{ github.event.inputs.environment }}" >> $GITHUB_ENV
+        echo "TF_VAR_DYNAMODB_TABLE_NAME=${{ github.event.inputs.environment }}-dynamodb-table" >> $GITHUB_ENV
+        echo "TF_VAR_ECS_SERVICE_NAME=${{ github.event.inputs.environment }}-ecs-service" >> $GITHUB_ENV
+        echo "TF_VAR_CONTAINER_NAME=${{ github.event.inputs.environment }}-container" >> $GITHUB_ENV
+        echo "TF_VAR_ECR_REPOSITORY=${{ github.event.inputs.environment }}-ecr-repo" >> $GITHUB_ENV
+
     - name: Debug Variables
       run: |
         echo "ECS Cluster Name: ${{ env.TF_VAR_ECS_CLUSTER_NAME }}"
         echo "ECS Task Family: ${{ env.TF_VAR_ECS_TASK_FAMILY }}"
         echo "Environment: ${{ env.TF_VAR_ENVIRONMENT }}"
-        echo "DyanamoDB: ${{ env.TF_VAR_DYNAMODB_TABLE_NAME }}"
+        echo "DynamoDB Table: ${{ env.TF_VAR_DYNAMODB_TABLE_NAME }}"
         echo "Container Name: ${{ env.TF_VAR_CONTAINER_NAME }}"
         echo "ECR Repository: ${{ env.TF_VAR_ECR_REPOSITORY }}"
 
