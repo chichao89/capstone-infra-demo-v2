@@ -1,5 +1,5 @@
 resource "aws_dynamodb_table" "users_table" {
-  name         = var.dynamodb_table_name # Dynamic table name
+  name         = "${var.dynamodb_table_name}" # Dynamic table name
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "username"
 
