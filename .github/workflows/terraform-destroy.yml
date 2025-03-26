@@ -44,20 +44,20 @@ jobs:
 
     - name: Debug Variables
       run: |
-        echo "ECS Cluster Name: ${{ vars.TF_VAR_ECS_CLUSTER_NAME }}"
-        echo "ECS Task Family: ${{ vars.TF_VAR_ECS_TASK_FAMILY }}"
-        echo "Environment: ${{ vars.TF_VAR_ENVIRONMENT }}"
-        echo "DyanamoDB: ${{ vars.TF_VAR_DYNAMODB_TABLE_NAME }}"
-        echo "Container Name: ${{ vars.TF_VAR_CONTAINER_NAME }}"
-        echo "ECR Repository: ${{ vars.TF_VAR_ECR_REPOSITORY }}"
+        echo "ECS Cluster Name: ${{ env.TF_VAR_ECS_CLUSTER_NAME }}"
+        echo "ECS Task Family: ${{ env.TF_VAR_ECS_TASK_FAMILY }}"
+        echo "Environment: ${{ env.TF_VAR_ENVIRONMENT }}"
+        echo "DyanamoDB: ${{ env.TF_VAR_DYNAMODB_TABLE_NAME }}"
+        echo "Container Name: ${{ env.TF_VAR_CONTAINER_NAME }}"
+        echo "ECR Repository: ${{ env.TF_VAR_ECR_REPOSITORY }}"
 
     - name: Terraform Destroy
       run: |
         terraform destroy -auto-approve \
-          -var="ecs_cluster_name=${{ vars.TF_VAR_ECS_CLUSTER_NAME }}" \
-          -var="ecs_task_family=${{ vars.TF_VAR_ECS_TASK_FAMILY }}" \
-          -var="environment=${{ vars.TF_VAR_ENVIRONMENT }}" \
-          -var="dynamodb_table_name=${{ vars.TF_VAR_DYNAMODB_TABLE_NAME }}" \
-          -var="ecs_service_name=${{ vars.TF_VAR_ECS_SERVICE_NAME }}" \
-          -var="container_name=${{ vars.TF_VAR_CONTAINER_NAME }}" \
-          -var="ecr_repository=${{ vars.TF_VAR_ECR_REPOSITORY }}"
+          -var="ecs_cluster_name=${{ env.TF_VAR_ECS_CLUSTER_NAME }}" \
+          -var="ecs_task_family=${{ env.TF_VAR_ECS_TASK_FAMILY }}" \
+          -var="environment=${{ env.TF_VAR_ENVIRONMENT }}" \
+          -var="dynamodb_table_name=${{ env.TF_VAR_DYNAMODB_TABLE_NAME }}" \
+          -var="ecs_service_name=${{ env.TF_VAR_ECS_SERVICE_NAME }}" \
+          -var="container_name=${{ env.TF_VAR_CONTAINER_NAME }}" \
+          -var="ecr_repository=${{ env.TF_VAR_ECR_REPOSITORY }}"
