@@ -20,7 +20,7 @@ resource "aws_ecs_task_definition" "app_task" {
       essential = true,
       environment = [
         { "name" : "AWS_REGION", "value" : "ap-southeast-1" },
-        { "name" : "DYNAMODB_TABLE", "value" : "${var.dynamodb_table_name}-${var.environment}" }
+        { "name" : "DYNAMODB_TABLE", "value" : "${var.environment}-${var.dynamodb_table_name}" }
       ],
       portMappings = [
         {
