@@ -20,44 +20,64 @@ jobs:
     environment: ${{ github.event.inputs.environment }}
 
     steps:
-    - name: Checkout Code
+    - name: Checkout Repository
       uses: actions/checkout@v3
 
-    - name: Configure AWS
+    - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v1
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ env.AWS_REGION }}
 
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+
     - name: Terraform Init
       run: |
         rm -rf .terraform
         terraform init \
-          -backend-config="bucket=YOUR_TERRAFORM_BUCKET" \
+          -backend-config="bucket=${{ secrets.S3_BUCKET }}" \
           -backend-config="key=terraform/ce8-coaching-18/${{ github.event.inputs.environment }}/terraform.tfstate" \
           -backend-config="region=${{ env.AWS_REGION }}"
 
     - name: Verify State Exists
       run: |
-        aws s3 ls s3://YOUR_TERRAFORM_BUCKET/terraform/ce8-coaching-18/${{ github.event.inputs.environment }}/terraform.tfstate || \
-        (echo "::error::State file missing!"; exit 1)
+        aws s3 ls s3://${{ secrets.S3_BUCKET }}/terraform/ce8-coaching-18/${{ github.event.inputs.environment }}/terraform.tfstate || \
+        (echo "::error::State file missing for ${{ github.event.inputs.environment }}"; exit 1)
 
     - name: Select Workspace
       run: |
         terraform workspace select ${{ github.event.inputs.environment }} || \
         terraform workspace new ${{ github.event.inputs.environment }}
 
-    - name: Set Precise Variables
+    - name: Set Environment Variables
       run: |
-        echo "TF_VAR_ecs_cluster_name=staging-cluster" >> $GITHUB_ENV
-        echo "TF_VAR_ecs_task_family=staging-task-family" >> $GITHUB_ENV
-        echo "TF_VAR_dynamodb_table_name=staging-staging-dynamodb-table" >> $GITHUB_ENV
-        echo "TF_VAR_ecs_service_name=staging-service" >> $GITHUB_ENV
-        echo "TF_VAR_container_name=staging-container" >> $GITHUB_ENV
-        echo "TF_VAR_ecr_repository=staging-repository" >> $GITHUB_ENV
+        ENV_PREFIX="${{ github.event.inputs.environment }}"
+        echo "TF_VAR_ecs_cluster_name=${ENV_PREFIX}-${{ env.TF_VAR_ECS_CLUSTER_NAME }}" >> $GITHUB_ENV
+        echo "TF_VAR_ecs_task_family=${ENV_PREFIX}-${{ env.TF_VAR_ECS_TASK_FAMILY }}" >> $GITHUB_ENV
+        echo "TF_VAR_dynamodb_table_name=${ENV_PREFIX}-${{ env.TF_VAR_DYNAMODB_TABLE_NAME }}" >> $GITHUB_ENV
+        echo "TF_VAR_ecs_service_name=${ENV_PREFIX}-${{ env.TF_VAR_ECS_SERVICE_NAME }}" >> $GITHUB_ENV
+        echo "TF_VAR_container_name=${ENV_PREFIX}-${{ env.TF_VAR_CONTAINER_NAME }}" >> $GITHUB_ENV
+        echo "TF_VAR_ecr_repository=${ENV_PREFIX}-${{ env.TF_VAR_ECR_REPOSITORY }}" >> $GITHUB_ENV
+        echo "TF_VAR_environment=${ENV_PREFIX}" >> $GITHUB_ENV
 
-    - name: Destroy Infrastructure
+    - name: Validate State Contents
       run: |
-        terraform plan -destroy -out=tfplan
-        terraform apply -auto-approve tfplan
+        echo "Workspace: $(terraform workspace show)"
+        terraform state list
+        terraform show -no-color
+
+    - name: Terraform Destroy Plan
+      run: terraform plan -destroy -out=tfplan
+
+    - name: Apply Destruction
+      run: terraform apply -auto-approve tfplan
+
+    - name: Cleanup Workspace
+      if: always()
+      run: |
+        terraform workspace select default
+        terraform workspace delete ${{ github.event.inputs.environment }} --force || true
+        rm -rf .terraform
+        rm -f tfplan
