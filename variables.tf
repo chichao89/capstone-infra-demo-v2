@@ -44,28 +44,28 @@ variable "ecr_repository" {
 # ECS Task Memory (MB)
 variable "ecs_task_memory" {
   description = "Memory allocation for ECS task"
-  type        = string
+  type        = number
   default     = "512"  # Default value for staging
 }
 
 # ECS Task CPU (CPU units)
 variable "ecs_task_cpu" {
   description = "CPU allocation for ECS task"
-  type        = string
+  type        = number
   default     = "256"  # Default value for staging
 }
 
 # ECS Container Memory (MB)
 variable "ecs_container_memory" {
   description = "Memory allocation for ECS container"
-  type        = string
+  type        = number
   default     = "512"  # Default value for staging
 }
 
 # ECS Container CPU (CPU units)
 variable "ecs_container_cpu" {
   description = "CPU allocation for ECS container"
-  type        = string
+  type        = number
   default     = "256"  # Default value for staging
 }
 
