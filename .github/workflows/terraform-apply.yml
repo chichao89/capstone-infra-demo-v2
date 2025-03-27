@@ -48,8 +48,8 @@ jobs:
       run: |
         rm -rf .terraform
         terraform init \
-          -backend-config="bucket=sctp-ce8-tfstate" \
-          -backend-config="key=terraform/ce8-coaching-18/${terraform.workspace}/terraform.tfstate" \
+          -backend-config="${{secrets.S3_BUCKET}}" \
+          -backend-config="key=terraform/ce8-coaching-18/${ENV_PREFIX}/terraform.tfstate" \
           -backend-config="region=${{ env.AWS_REGION }}"
 
     - name: Select/Create Workspace
