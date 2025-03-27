@@ -68,6 +68,11 @@ jobs:
           -backend-config="key=terraform/ce8-coaching-18/${{ env.environment }}/terraform.tfstate" \
           -backend-config="region=${{ env.AWS_REGION }}"
 
+    # Remove stale ECR data reference if it exists.
+    - name: Remove stale ECR data reference from state
+      run: |
+        terraform state rm data.aws_ecr_repository.existing_repository[0] || echo "State reference not found, continuing..."
+
     - name: Terraform Plan for Destroy
       run: |
         terraform plan -destroy \
