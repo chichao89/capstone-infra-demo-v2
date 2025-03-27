@@ -35,5 +35,5 @@ output "ecs_service_arn" {
 
 output "ecr_repository" {
   description = "The name of the shared ECR repository"
-  value       = aws_ecr_repository.register_service_repo[count.index].name
+  value = length(aws_ecr_repository.register_service_repo) > 0 ? aws_ecr_repository.register_service_repo[0].name : "ECR repository is already created"
 }

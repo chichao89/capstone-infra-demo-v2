@@ -16,7 +16,8 @@ resource "aws_ecs_task_definition" "app_task" {
   container_definitions = jsonencode([
     {
       name      = var.container_name
-      image     = "${aws_ecr_repository.register_service_repo.repository_url}:${var.environment}" # Use environment tag
+      image     = "${aws_ecr_repository.register_service_repo[count.index].repository_url}:${var.environment}" # Access repository URL using count.index
+      memory    = "512"
       memory    = var.ecs_container_memory   # Dynamic memory for container
       cpu       = var.ecs_container_cpu      # Dynamic CPU for container
       essential = true
