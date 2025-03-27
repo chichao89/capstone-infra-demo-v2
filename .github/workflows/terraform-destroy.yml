@@ -68,14 +68,24 @@ jobs:
           -backend-config="key=terraform/ce8-coaching-18/${{ env.environment }}/terraform.tfstate" \
           -backend-config="region=${{ env.AWS_REGION }}"
 
-    # Remove stale ECR data reference if it exists.
-    - name: Remove stale ECR data reference from state
+    - name: Clean State Before Destroy
       run: |
-        terraform state rm data.aws_ecr_repository.existing_repository[0] || echo "State reference not found, continuing..."
+        # Remove ECR data source if exists
+        terraform state rm data.aws_ecr_repository.existing_repository 2>/dev/null || true
+        
+        # Refresh state ignoring ECR errors
+        terraform refresh -target=aws_ecs_cluster.app_cluster \
+                         -target=aws_dynamodb_table.users_table \
+                         -target=aws_ecs_service.register_app_service \
+                         -target=aws_ecs_task_definition.app_task 2>/dev/null || true
 
     - name: Terraform Plan for Destroy
       run: |
         terraform plan -destroy \
+          -target=aws_ecs_cluster.app_cluster \
+          -target=aws_dynamodb_table.users_table \
+          -target=aws_ecs_service.register_app_service \
+          -target=aws_ecs_task_definition.app_task \
           -var="environment=${{ env.environment }}" \
           -var="ecs_cluster_name=${{ env.ecs_cluster_name }}" \
           -var="ecs_task_family=${{ env.ecs_task_family }}" \
@@ -88,3 +98,10 @@ jobs:
 
     - name: Terraform Destroy
       run: terraform apply -auto-approve tfplan-destroy
+
+    - name: Cleanup ECR Repository (if exists)
+      if: ${{ env.create_ecr == 'true' }}
+      run: |
+        aws ecr delete-repository \
+          --repository-name ${{ env.ecr_repository }} \
+          --force 2>/dev/null || true

@@ -18,4 +18,6 @@ data "aws_subnets" "public" {
 data "aws_ecr_repository" "existing_repository" {
   count = var.create_ecr ? 0 : 1  # Only try to fetch if we're not creating
   name = var.ecr_repository
+
+  
 }
