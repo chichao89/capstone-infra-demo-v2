@@ -33,29 +33,22 @@ jobs:
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v2
 
-    - name: Set Prefixed Variables
+    - name: Set Environment Variables
       run: |
-        ENV_PREFIX="${{ github.event.inputs.environment }}"
-        echo "TF_VAR_ecs_cluster_name=${ENV_PREFIX}-${{ secrets.TF_VAR_ECS_CLUSTER_NAME }}" >> $GITHUB_ENV
-        echo "TF_VAR_ecs_task_family=${ENV_PREFIX}-${{ secrets.TF_VAR_ECS_TASK_FAMILY }}" >> $GITHUB_ENV
-        echo "TF_VAR_dynamodb_table_name=${ENV_PREFIX}-${{ secrets.TF_VAR_DYNAMODB_TABLE_NAME }}" >> $GITHUB_ENV
-        echo "TF_VAR_ecs_service_name=${ENV_PREFIX}-${{ secrets.TF_VAR_ECS_SERVICE_NAME }}" >> $GITHUB_ENV
-        echo "TF_VAR_container_name=${ENV_PREFIX}-${{ secrets.TF_VAR_CONTAINER_NAME }}" >> $GITHUB_ENV
-        echo "TF_VAR_ecr_repository=${ENV_PREFIX}-${{ secrets.TF_VAR_ECR_REPOSITORY }}" >> $GITHUB_ENV
-        echo "TF_VAR_environment=${ENV_PREFIX}" >> $GITHUB_ENV
+        echo "TF_VAR_environment=${{ github.event.inputs.environment }}" >> $GITHUB_ENV
+        echo "TF_VAR_ecs_cluster_name=${{ github.event.inputs.environment }}-cluster" >> $GITHUB_ENV
+        echo "TF_VAR_ecs_task_family=${{ github.event.inputs.environment }}-task-family" >> $GITHUB_ENV
+        echo "TF_VAR_ecs_service_name=${{ github.event.inputs.environment }}-service" >> $GITHUB_ENV
+        echo "TF_VAR_dynamodb_table_name=${{ github.event.inputs.environment }}-dynamodb-table" >> $GITHUB_ENV
+        echo "TF_VAR_container_name=${{ github.event.inputs.environment }}-container" >> $GITHUB_ENV
+        echo "TF_VAR_ecr_repository=${{ github.event.inputs.environment }}-repository" >> $GITHUB_ENV
 
     - name: Terraform Init
       run: |
-        rm -rf .terraform
         terraform init \
-          -backend-config="${{secrets.S3_BUCKET}}" \
-          -backend-config="key=terraform/ce8-coaching-18/${ENV_PREFIX}/terraform.tfstate" \
-          -backend-config="region=${{ env.AWS_REGION }}"
-
-    - name: Select/Create Workspace
-      run: |
-        terraform workspace select ${{ github.event.inputs.environment }} || \
-        terraform workspace new ${{ github.event.inputs.environment }}
+          -backend-config="bucket=${{ secrets.S3_BUCKET }}" \
+          -backend-config="key=terraform/ce8-coaching-18/${{ github.event.inputs.environment }}/terraform.tfstate" \
+          -backend-config="region=${{ env.AWS_REGION }}" 
 
     - name: Terraform Validate
       run: terraform validate
@@ -63,10 +56,10 @@ jobs:
     - name: Terraform Plan
       run: |
         terraform plan \
+          -var="environment=${{ env.TF_VAR_environment }}" \
           -var="ecs_cluster_name=${{ env.TF_VAR_ecs_cluster_name }}" \
           -var="ecs_task_family=${{ env.TF_VAR_ecs_task_family }}" \
           -var="ecs_service_name=${{ env.TF_VAR_ecs_service_name }}" \
-          -var="environment=${{ env.TF_VAR_environment }}" \
           -var="dynamodb_table_name=${{ env.TF_VAR_dynamodb_table_name }}" \
           -var="container_name=${{ env.TF_VAR_container_name }}" \
           -var="ecr_repository=${{ env.TF_VAR_ecr_repository }}" \
@@ -76,8 +69,7 @@ jobs:
       run: terraform apply -auto-approve tfplan
 
     - name: Generate Outputs
-      run: |
-        terraform output > tf_outputs.txt
+      run: terraform output > tf_outputs.txt
 
     - name: Upload Outputs to S3
       run: |
