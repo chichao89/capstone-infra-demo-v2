@@ -36,5 +36,5 @@ output "ecs_service_arn" {
 
 output "ecr_repository" {
   description = "The name of the shared ECR repository"
-  value = var.create_ecr ? aws_ecr_repository.register_service_repo[0].name : try(split("/", data.aws_ecr_repository.existing_repository[0].repository_url)[1], null)
+  value = aws_ecr_repository.register_service_repo.name
 }
