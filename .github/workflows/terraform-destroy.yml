@@ -33,34 +33,53 @@ jobs:
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v2
 
-    - name: Terraform Init
+    - name: Set Environment Variables
       run: |
-        rm -rf .terraform
-        terraform init \
-          -backend-config="bucket=${{ secrets.S3_BUCKET }}" \
-          -backend-config="key=terraform/ce8-coaching-18/${{ github.event.inputs.environment }}/terraform.tfstate" \
-          -backend-config="region=${{ env.AWS_REGION }}"
-
-    - name: Set Prefixed Variables from Secrets
-      run: |
-        ENV_PREFIX="${{ github.event.inputs.environment }}"
-        echo "ecs_cluster_name=${ENV_PREFIX}-${{ vars.ECS_CLUSTER_NAME }}" >> $GITHUB_ENV
-        echo "ecs_task_family=${ENV_PREFIX}-${{ vars.ECS_TASK_FAMILY }}" >> $GITHUB_ENV
-        echo "dynamodb_table_name=${ENV_PREFIX}-${{ vars.DYNAMODB_TABLE_NAME }}" >> $GITHUB_ENV
-        echo "ecs_service_name=${ENV_PREFIX}-${{ vars.ECS_SERVICE_NAME }}" >> $GITHUB_ENV
-        echo "container_name=${ENV_PREFIX}-${{ vars.CONTAINER_NAME }}" >> $GITHUB_ENV
+        echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_ENV
+        echo "ecs_cluster_name=${{ github.event.inputs.environment }}-${{ vars.ECS_CLUSTER_NAME }}" >> $GITHUB_ENV
+        echo "ecs_task_family=${{ github.event.inputs.environment }}-${{ vars.ECS_TASK_FAMILY }}" >> $GITHUB_ENV
+        echo "dynamodb_table_name=${{ github.event.inputs.environment }}-${{ vars.DYNAMODB_TABLE_NAME }}" >> $GITHUB_ENV
+        echo "ecs_service_name=${{ github.event.inputs.environment }}-${{ vars.ECS_SERVICE_NAME }}" >> $GITHUB_ENV
+        echo "container_name=${{ github.event.inputs.environment }}-${{ vars.CONTAINER_NAME }}" >> $GITHUB_ENV
         echo "ecr_repository=${{ vars.ECR_REPOSITORY }}" >> $GITHUB_ENV
-        echo "environment=${ENV_PREFIX}" >> $GITHUB_ENV
+        
+        # Set create_ecr flag dynamically based on the environment
+        if [ "${{ github.event.inputs.environment }}" == "staging" ]; then
+          echo "create_ecr=true" >> $GITHUB_ENV
+        else
+          echo "create_ecr=false" >> $GITHUB_ENV
+        fi
 
-    - name: Validate Variables
+    - name: Validate Environment Variables
       run: |
+        echo "Environment: ${{ env.environment }}"
         echo "ECS Cluster: ${{ env.ecs_cluster_name }}"
         echo "Task Family: ${{ env.ecs_task_family }}"
         echo "DynamoDB Table: ${{ env.dynamodb_table_name }}"
         echo "ECS Service: ${{ env.ecs_service_name }}"
         echo "Container: ${{ env.container_name }}"
         echo "ECR Repo: ${{ env.ecr_repository }}"
-        
+        echo "Create ECR: ${{ env.create_ecr }}"
+
+    - name: Terraform Init
+      run: |
+        terraform init \
+          -backend-config="bucket=${{ secrets.S3_BUCKET }}" \
+          -backend-config="key=terraform/ce8-coaching-18/${{ env.environment }}/terraform.tfstate" \
+          -backend-config="region=${{ env.AWS_REGION }}"
+
+    - name: Terraform Plan for Destroy
+      run: |
+        terraform plan -destroy \
+          -var="environment=${{ env.environment }}" \
+          -var="ecs_cluster_name=${{ env.ecs_cluster_name }}" \
+          -var="ecs_task_family=${{ env.ecs_task_family }}" \
+          -var="ecs_service_name=${{ env.ecs_service_name }}" \
+          -var="dynamodb_table_name=${{ env.dynamodb_table_name }}" \
+          -var="container_name=${{ env.container_name }}" \
+          -var="ecr_repository=${{ env.ecr_repository }}" \
+          -var="create_ecr=${{ env.create_ecr }}" \
+          -out=tfplan-destroy
 
     - name: Terraform Destroy
-      run: terraform destroy -auto-approve
+      run: terraform apply -auto-approve tfplan-destroy

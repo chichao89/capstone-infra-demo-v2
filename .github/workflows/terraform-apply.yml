@@ -35,14 +35,15 @@ jobs:
 
     - name: Set Environment Variables
       run: |
-        echo "Environment=${{ github.event.inputs.environment }}" >> $GITHUB_ENV
-        echo "Ecs_cluster_name=${{ github.event.inputs.environment }}-${{vars.ECS_CLUSTER_NAME}}" >> $GITHUB_ENV
-        echo "Ecs_task_family=${{ github.event.inputs.environment }}-${{vars.ECS_TASK_FAMILY}}" >> $GITHUB_ENV
-        echo "Ecs_service_name=${{ github.event.inputs.environment }}-${{vars.ECS_SERVICE_NAME}}" >> $GITHUB_ENV
-        echo "Dynamodb_table_name=${{ github.event.inputs.environment }}-${{vars.DYNAMODB_TABLE_NAME}}" >> $GITHUB_ENV
-        echo "Container_name=${{ github.event.inputs.environment }}-${{vars.CONTAINER_NAME}}" >> $GITHUB_ENV
-        echo "Ecr_repository=${{ vars.ECR_REPOSITORY }}" >> $GITHUB_ENV
-        # Set create_ecr flag based on the environment
+        echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_ENV
+        echo "ecs_cluster_name=${{ github.event.inputs.environment }}-${{ vars.ECS_CLUSTER_NAME }}" >> $GITHUB_ENV
+        echo "ecs_task_family=${{ github.event.inputs.environment }}-${{ vars.ECS_TASK_FAMILY }}" >> $GITHUB_ENV
+        echo "ecs_service_name=${{ github.event.inputs.environment }}-${{ vars.ECS_SERVICE_NAME }}" >> $GITHUB_ENV
+        echo "dynamodb_table_name=${{ github.event.inputs.environment }}-${{ vars.DYNAMODB_TABLE_NAME }}" >> $GITHUB_ENV
+        echo "container_name=${{ github.event.inputs.environment }}-${{ vars.CONTAINER_NAME }}" >> $GITHUB_ENV
+        echo "ecr_repository=${{ vars.ECR_REPOSITORY }}" >> $GITHUB_ENV
+
+        # Set create_ecr flag dynamically based on the environment
         if [ "${{ github.event.inputs.environment }}" == "staging" ]; then
           echo "create_ecr=true" >> $GITHUB_ENV
         else
@@ -53,7 +54,7 @@ jobs:
       run: |
         terraform init \
           -backend-config="bucket=${{ secrets.S3_BUCKET }}" \
-          -backend-config="key=terraform/ce8-coaching-18/${{ github.event.inputs.environment }}/terraform.tfstate" \
+          -backend-config="key=terraform/ce8-coaching-18/${{ env.environment }}/terraform.tfstate" \
           -backend-config="region=${{ env.AWS_REGION }}" 
 
     - name: Terraform Validate
@@ -80,5 +81,5 @@ jobs:
 
     - name: Upload Outputs to S3
       run: |
-        OUTPUT_PATH="terraform/ce8-coaching-18/${{ github.event.inputs.environment }}/tf_output"
+        OUTPUT_PATH="terraform/ce8-coaching-18/${{ env.environment }}/tf_output"
         aws s3 cp tf_outputs.txt s3://${{ secrets.S3_BUCKET }}/${OUTPUT_PATH} --content-type text/plain
