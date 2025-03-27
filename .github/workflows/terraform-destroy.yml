@@ -44,22 +44,22 @@ jobs:
     - name: Set Prefixed Variables from Secrets
       run: |
         ENV_PREFIX="${{ github.event.inputs.environment }}"
-        echo "TF_VAR_ecs_cluster_name=${ENV_PREFIX}-${{ secrets.TF_VAR_ECS_CLUSTER_NAME }}" >> $GITHUB_ENV
-        echo "TF_VAR_ecs_task_family=${ENV_PREFIX}-${{ secrets.TF_VAR_ECS_TASK_FAMILY }}" >> $GITHUB_ENV
-        echo "TF_VAR_dynamodb_table_name=${ENV_PREFIX}-${{ secrets.TF_VAR_DYNAMODB_TABLE_NAME }}" >> $GITHUB_ENV
-        echo "TF_VAR_ecs_service_name=${ENV_PREFIX}-${{ secrets.TF_VAR_ECS_SERVICE_NAME }}" >> $GITHUB_ENV
-        echo "TF_VAR_container_name=${ENV_PREFIX}-${{ secrets.TF_VAR_CONTAINER_NAME }}" >> $GITHUB_ENV
-        echo "TF_VAR_ecr_repository=${{ secrets.TF_VAR_ECR_REPOSITORY }}" >> $GITHUB_ENV
-        echo "TF_VAR_environment=${ENV_PREFIX}" >> $GITHUB_ENV
+        echo "ecs_cluster_name=${ENV_PREFIX}-${{ vars.ECS_CLUSTER_NAME }}" >> $GITHUB_ENV
+        echo "ecs_task_family=${ENV_PREFIX}-${{ vars.ECS_TASK_FAMILY }}" >> $GITHUB_ENV
+        echo "dynamodb_table_name=${ENV_PREFIX}-${{ vars.DYNAMODB_TABLE_NAME }}" >> $GITHUB_ENV
+        echo "ecs_service_name=${ENV_PREFIX}-${{ vars.ECS_SERVICE_NAME }}" >> $GITHUB_ENV
+        echo "container_name=${ENV_PREFIX}-${{ vars.CONTAINER_NAME }}" >> $GITHUB_ENV
+        echo "ecr_repository=${{ vars.ECR_REPOSITORY }}" >> $GITHUB_ENV
+        echo "environment=${ENV_PREFIX}" >> $GITHUB_ENV
 
     - name: Validate Variables
       run: |
-        echo "ECS Cluster: ${{ env.TF_VAR_ecs_cluster_name }}"
-        echo "Task Family: ${{ env.TF_VAR_ecs_task_family }}"
-        echo "DynamoDB Table: ${{ env.TF_VAR_dynamodb_table_name }}"
-        echo "ECS Service: ${{ env.TF_VAR_ecs_service_name }}"
-        echo "Container: ${{ env.TF_VAR_container_name }}"
-        echo "ECR Repo: ${{ env.TF_VAR_ecr_repository }}"
+        echo "ECS Cluster: ${{ env.ecs_cluster_name }}"
+        echo "Task Family: ${{ env.ecs_task_family }}"
+        echo "DynamoDB Table: ${{ env.dynamodb_table_name }}"
+        echo "ECS Service: ${{ env.ecs_service_name }}"
+        echo "Container: ${{ env.container_name }}"
+        echo "ECR Repo: ${{ env.ecr_repository }}"
         
 
     - name: Terraform Destroy

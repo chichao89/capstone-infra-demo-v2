@@ -35,18 +35,18 @@ jobs:
 
     - name: Set Environment Variables
       run: |
-        echo "TF_VAR_environment=${{ github.event.inputs.environment }}" >> $GITHUB_ENV
-        echo "TF_VAR_ecs_cluster_name=${{ github.event.inputs.environment }}-cluster" >> $GITHUB_ENV
-        echo "TF_VAR_ecs_task_family=${{ github.event.inputs.environment }}-task-family" >> $GITHUB_ENV
-        echo "TF_VAR_ecs_service_name=${{ github.event.inputs.environment }}-service" >> $GITHUB_ENV
-        echo "TF_VAR_dynamodb_table_name=${{ github.event.inputs.environment }}-dynamodb-table" >> $GITHUB_ENV
-        echo "TF_VAR_container_name=${{ github.event.inputs.environment }}-container" >> $GITHUB_ENV
-        echo "TF_VAR_ecr_repository=${{ secrets.TF_VAR_ecr_repository }}" >> $GITHUB_ENV
+        echo "Environment=${{ github.event.inputs.environment }}" >> $GITHUB_ENV
+        echo "Ecs_cluster_name=${{ github.event.inputs.environment }}-${{vars.ECS_CLUSTER_NAME}}" >> $GITHUB_ENV
+        echo "Ecs_task_family=${{ github.event.inputs.environment }}-${{vars.ECS_TASK_FAMILY}}" >> $GITHUB_ENV
+        echo "Ecs_service_name=${{ github.event.inputs.environment }}-${{vars.ECS_SERVICE_NAME}}" >> $GITHUB_ENV
+        echo "Dynamodb_table_name=${{ github.event.inputs.environment }}-${{vars.DYNAMODB_TABLE_NAME}}" >> $GITHUB_ENV
+        echo "Container_name=${{ github.event.inputs.environment }}-${{vars.CONTAINER_NAME}}" >> $GITHUB_ENV
+        echo "Ecr_repository=${{ vars.ECR_REPOSITORY }}" >> $GITHUB_ENV
         # Set create_ecr flag based on the environment
         if [ "${{ github.event.inputs.environment }}" == "staging" ]; then
-          echo "TF_VAR_create_ecr=true" >> $GITHUB_ENV
+          echo "create_ecr=true" >> $GITHUB_ENV
         else
-          echo "TF_VAR_create_ecr=false" >> $GITHUB_ENV
+          echo "create_ecr=false" >> $GITHUB_ENV
         fi
 
     - name: Terraform Init
@@ -62,14 +62,14 @@ jobs:
     - name: Terraform Plan
       run: |
         terraform plan \
-          -var="environment=${{ env.TF_VAR_environment }}" \
-          -var="ecs_cluster_name=${{ env.TF_VAR_ecs_cluster_name }}" \
-          -var="ecs_task_family=${{ env.TF_VAR_ecs_task_family }}" \
-          -var="ecs_service_name=${{ env.TF_VAR_ecs_service_name }}" \
-          -var="dynamodb_table_name=${{ env.TF_VAR_dynamodb_table_name }}" \
-          -var="container_name=${{ env.TF_VAR_container_name }}" \
-          -var="ecr_repository=${{ env.TF_VAR_ecr_repository }}" \
-          -var="create_ecr=${{ env.TF_VAR_create_ecr }}" \
+          -var="environment=${{ env.environment }}" \
+          -var="ecs_cluster_name=${{ env.ecs_cluster_name }}" \
+          -var="ecs_task_family=${{ env.ecs_task_family }}" \
+          -var="ecs_service_name=${{ env.ecs_service_name }}" \
+          -var="dynamodb_table_name=${{ env.dynamodb_table_name }}" \
+          -var="container_name=${{ env.container_name }}" \
+          -var="ecr_repository=${{ env.ecr_repository }}" \
+          -var="create_ecr=${{ env.create_ecr }}" \
           -out=tfplan
 
     - name: Terraform Apply
