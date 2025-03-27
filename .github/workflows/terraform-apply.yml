@@ -41,8 +41,13 @@ jobs:
         echo "TF_VAR_ecs_service_name=${{ github.event.inputs.environment }}-service" >> $GITHUB_ENV
         echo "TF_VAR_dynamodb_table_name=${{ github.event.inputs.environment }}-dynamodb-table" >> $GITHUB_ENV
         echo "TF_VAR_container_name=${{ github.event.inputs.environment }}-container" >> $GITHUB_ENV
-        # Using the GitHub secret for the single ECR repository
         echo "TF_VAR_ecr_repository=${{ secrets.TF_VAR_ecr_repository }}" >> $GITHUB_ENV
+        # Set create_ecr flag based on the environment
+        if [ "${{ github.event.inputs.environment }}" == "staging" ]; then
+          echo "TF_VAR_create_ecr=true" >> $GITHUB_ENV
+        else
+          echo "TF_VAR_create_ecr=false" >> $GITHUB_ENV
+        fi
 
     - name: Terraform Init
       run: |
@@ -64,6 +69,7 @@ jobs:
           -var="dynamodb_table_name=${{ env.TF_VAR_dynamodb_table_name }}" \
           -var="container_name=${{ env.TF_VAR_container_name }}" \
           -var="ecr_repository=${{ env.TF_VAR_ecr_repository }}" \
+          -var="create_ecr=${{ env.TF_VAR_create_ecr }}" \
           -out=tfplan
 
     - name: Terraform Apply

@@ -85,7 +85,7 @@ resource "aws_iam_role_policy" "ecs_execution_role_policy" {
           "ecr:BatchGetImage"
         ],
          # Accessing the ECR repository 
-        Resource = try(aws_ecr_repository.register_service_repo[0].arn, data.aws_ecr_repository.existing_repository.arn)
+        Resource = var.create_ecr ? aws_ecr_repository.register_service_repo[0].arn : data.aws_ecr_repository.existing_repository[0].arn
       },
       {
         Effect = "Allow",
