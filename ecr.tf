@@ -1,7 +1,3 @@
-# Check if the ECR repository exists
-data "aws_ecr_repository" "existing_repository" {
-  name = var.ecr_repository
-}
 
 # ECR Repository (with conditional creation)
 resource "aws_ecr_repository" "register_service_repo" {
