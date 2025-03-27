@@ -49,7 +49,7 @@ jobs:
         echo "TF_VAR_dynamodb_table_name=${ENV_PREFIX}-${{ secrets.TF_VAR_DYNAMODB_TABLE_NAME }}" >> $GITHUB_ENV
         echo "TF_VAR_ecs_service_name=${ENV_PREFIX}-${{ secrets.TF_VAR_ECS_SERVICE_NAME }}" >> $GITHUB_ENV
         echo "TF_VAR_container_name=${ENV_PREFIX}-${{ secrets.TF_VAR_CONTAINER_NAME }}" >> $GITHUB_ENV
-        echo "TF_VAR_ecr_repository=${ENV_PREFIX}-${{ secrets.TF_VAR_ECR_REPOSITORY }}" >> $GITHUB_ENV
+        echo "TF_VAR_ecr_repository=${{ secrets.TF_VAR_ECR_REPOSITORY }}" >> $GITHUB_ENV
         echo "TF_VAR_environment=${ENV_PREFIX}" >> $GITHUB_ENV
 
     - name: Validate Variables
