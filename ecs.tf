@@ -16,7 +16,7 @@ resource "aws_ecs_task_definition" "app_task" {
   container_definitions = jsonencode([
     {
       name      = var.container_name
-      image     = var.create_ecr ? "${aws_ecr_repository.register_service_repo[0].repository_url}:${var.environment}" : "${data.aws_ecr_repository.existing_repository[0].repository_url}:${var.environment}"
+      image = var.create_ecr ? "${aws_ecr_repository.register_service_repo[0].repository_url}:${var.environment}" :try("${data.aws_ecr_repository.existing_repository[0].repository_url}:${var.environment}", null)
       essential = true
       memory    = "512"
       memory    = "512"
