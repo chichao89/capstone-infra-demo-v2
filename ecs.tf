@@ -16,7 +16,7 @@ resource "aws_ecs_task_definition" "app_task" {
   container_definitions = jsonencode([
     {
       name      = var.container_name
-      image     = length(aws_ecr_repository.register_service_repo) > 0 ? "${aws_ecr_repository.register_service_repo[0].repository_url}:${var.environment}" : "${aws_ecr_repository.register_service_repo[0].repository_url}:${var.environment}"  # Use conditional logic for image
+      image     = length(aws_ecr_repository.register_service_repo) > 0 ? "${aws_ecr_repository.register_service_repo[0].repository_url}:${var.environment}" : "${data.aws_ecr_repository.existing_repository.repository_url}:${var.environment}" # Use existing or newly created repo URL
       memory    = "512"
       memory    = "512"
       memory    = var.ecs_container_memory   # Dynamic memory for container
