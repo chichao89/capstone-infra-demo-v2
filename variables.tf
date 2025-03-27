@@ -80,7 +80,7 @@ variable "container_port" {
 variable "desired_count" {
   description = "The desired number of ECS service instances"
   type        = number
-  default     = 1  # Default desired count for staging
+  default     = 0  # Default desired count for staging
 }
 
 # AWS Region (can be passed dynamically if needed)
