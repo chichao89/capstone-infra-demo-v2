@@ -32,6 +32,8 @@ jobs:
 
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_wrapper: false
 
     - name: Set Environment Variables
       run: |
@@ -41,15 +43,8 @@ jobs:
         echo "dynamodb_table_name=${{ github.event.inputs.environment }}-${{ vars.DYNAMODB_TABLE_NAME }}" >> $GITHUB_ENV
         echo "ecs_service_name=${{ github.event.inputs.environment }}-${{ vars.ECS_SERVICE_NAME }}" >> $GITHUB_ENV
         echo "container_name=${{ github.event.inputs.environment }}-${{ vars.CONTAINER_NAME }}" >> $GITHUB_ENV
+        echo "ecr_repository=${{ vars.ECR_REPOSITORY }}" >> $GITHUB_ENV
         
-        # Ensure ecr_repository is not empty
-        if [ -z "${{ vars.ECR_REPOSITORY }}" ]; then
-          echo "ecr_repository=none" >> $GITHUB_ENV
-        else
-          echo "ecr_repository=${{ vars.ECR_REPOSITORY }}" >> $GITHUB_ENV
-        fi
-
-        # Set create_ecr flag dynamically based on the environment
         if [ "${{ github.event.inputs.environment }}" == "staging" ]; then
           echo "create_ecr=true" >> $GITHUB_ENV
         else
@@ -74,30 +69,77 @@ jobs:
           -backend-config="key=terraform/ce8-coaching-18/${{ env.environment }}/terraform.tfstate" \
           -backend-config="region=${{ env.AWS_REGION }}"
 
-    - name: Terraform Plan for Destroy
+    - name: Prepare for Destroy
       run: |
-        if [ "${{ env.ecr_repository }}" == "none" ]; then
-          terraform plan -destroy \
-            -var="environment=${{ env.environment }}" \
-            -var="ecs_cluster_name=${{ env.ecs_cluster_name }}" \
-            -var="ecs_task_family=${{ env.ecs_task_family }}" \
-            -var="ecs_service_name=${{ env.ecs_service_name }}" \
-            -var="dynamodb_table_name=${{ env.dynamodb_table_name }}" \
-            -var="container_name=${{ env.container_name }}" \
-            -var="create_ecr=${{ env.create_ecr }}" \
-            -out=tfplan-destroy
-        else
-          terraform plan -destroy \
-            -var="environment=${{ env.environment }}" \
-            -var="ecs_cluster_name=${{ env.ecs_cluster_name }}" \
-            -var="ecs_task_family=${{ env.ecs_task_family }}" \
-            -var="ecs_service_name=${{ env.ecs_service_name }}" \
-            -var="dynamodb_table_name=${{ env.dynamodb_table_name }}" \
-            -var="container_name=${{ env.container_name }}" \
-            -var="ecr_repository=${{ env.ecr_repository }}" \
-            -var="create_ecr=${{ env.create_ecr }}" \
-            -out=tfplan-destroy
+        # Disable immediate exit on error
+        set +e
+        
+        # 1. Clean up ECR data source if exists
+        if terraform state list | grep -q "data.aws_ecr_repository.existing_repository"; then
+          echo "Removing ECR data source from state..."
+          terraform state rm data.aws_ecr_repository.existing_repository
         fi
+        
+        # 2. Prepare variables file
+        cat <<EOF > terraform.tfvars
+        container_name = "${{ env.container_name }}"
+        environment = "${{ env.environment }}"
+        ecs_cluster_name = "${{ env.ecs_cluster_name }}"
+        ecs_task_family = "${{ env.ecs_task_family }}"
+        dynamodb_table_name = "${{ env.dynamodb_table_name }}"
+        ecs_service_name = "${{ env.ecs_service_name }}"
+        ecr_repository = "${{ env.ecr_repository }}"
+        create_ecr = "${{ env.create_ecr }}"
+        EOF
+        
+        # 3. Refresh existing resources
+        RESOURCES=(
+          "aws_ecs_cluster.app_cluster"
+          "aws_dynamodb_table.users_table"
+          "aws_ecs_service.register_app_service"
+          "aws_ecs_task_definition.app_task"
+        )
+        
+        for resource in "${RESOURCES[@]}"; do
+          if terraform state list | grep -q "$resource"; then
+            echo "Refreshing $resource..."
+            terraform refresh -target="$resource"
+          fi
+        done
+        
+        # Re-enable error checking
+        set -e
 
     - name: Terraform Destroy
-      run: terraform apply -auto-approve tfplan-destroy
+      run: |
+        # Destroy resources in proper order
+        set +e
+        
+        RESOURCES=(
+          "aws_ecs_service.register_app_service"
+          "aws_ecs_task_definition.app_task"
+          "aws_ecs_cluster.app_cluster"
+          "aws_dynamodb_table.users_table"
+        )
+        
+        for resource in "${RESOURCES[@]}"; do
+          if terraform state list | grep -q "$resource"; then
+            echo "Destroying $resource..."
+            terraform destroy -auto-approve -target="$resource"
+          fi
+        done
+        
+        # Full destroy if anything remains
+        if [ $(terraform state list | wc -l) -gt 0 ]; then
+          echo "Performing final destroy..."
+          terraform destroy -auto-approve
+        fi
+        
+        set -e
+
+    - name: Cleanup ECR Repository (if exists)
+      if: ${{ env.create_ecr == 'true' }}
+      run: |
+        aws ecr delete-repository \
+          --repository-name ${{ env.ecr_repository }} \
+          --force 2>/dev/null || true
