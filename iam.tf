@@ -85,7 +85,7 @@ resource "aws_iam_role_policy" "ecs_execution_role_policy" {
           "ecr:BatchGetImage"
         ],
          # Accessing the ECR repository 
-        Resource = aws_ecr_repository.register_service_repo.arn
+        Resource = aws_ecr_repository.register_service_repo[count.index].arn
       },
       {
         Effect = "Allow",
