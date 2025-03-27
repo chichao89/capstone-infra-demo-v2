@@ -16,9 +16,6 @@ data "aws_subnets" "public" {
 
 # Check if the ECR repository exists
 data "aws_ecr_repository" "existing_repository" {
+  count = var.create_ecr ? 0 : 1  # Only try to fetch if we're not creating
   name = var.ecr_repository
-
-  depends_on = [
-    aws_ecr_repository.register_service_repo  # Ensure this is created before fetching it
-  ]
 }
