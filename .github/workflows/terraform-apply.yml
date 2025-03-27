@@ -41,7 +41,8 @@ jobs:
         echo "TF_VAR_ecs_service_name=${{ github.event.inputs.environment }}-service" >> $GITHUB_ENV
         echo "TF_VAR_dynamodb_table_name=${{ github.event.inputs.environment }}-dynamodb-table" >> $GITHUB_ENV
         echo "TF_VAR_container_name=${{ github.event.inputs.environment }}-container" >> $GITHUB_ENV
-        echo "TF_VAR_ecr_repository=${{ github.event.inputs.environment }}-repository" >> $GITHUB_ENV
+        # Using the GitHub secret for the single ECR repository
+        echo "TF_VAR_ecr_repository=${{ secrets.TF_VAR_ecr_repository }}" >> $GITHUB_ENV
 
     - name: Terraform Init
       run: |
