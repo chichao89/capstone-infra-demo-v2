@@ -41,7 +41,7 @@ jobs:
         echo "ecs_service_name=${{ github.event.inputs.environment }}-${{ vars.ECS_SERVICE_NAME }}" >> $GITHUB_ENV
         echo "dynamodb_table_name=${{ github.event.inputs.environment }}-${{ vars.DYNAMODB_TABLE_NAME }}" >> $GITHUB_ENV
         echo "container_name=${{ github.event.inputs.environment }}-${{ vars.CONTAINER_NAME }}" >> $GITHUB_ENV
-        echo "ecr_repository=${{ vars.ECR_REPOSITORY }}" >> $GITHUB_ENV
+        echo "ecr_repository=${{ github.event.inputs.environment }}-${{ vars.ECR_REPOSITORY }}" >> $GITHUB_ENV
 
         # Set create_ecr flag dynamically based on the environment
         if [ "${{ github.event.inputs.environment }}" == "staging" ]; then

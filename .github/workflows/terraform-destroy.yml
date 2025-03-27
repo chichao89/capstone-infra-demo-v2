@@ -1,145 +1,91 @@
 name: Terraform Destroy
 
-on: 
+on:
   workflow_dispatch:
     inputs:
       environment:
-        description: "Select environment"
+        description: Select environment
         required: true
         type: choice
         options:
           - staging
           - production
 
-env:            
-  AWS_REGION: ap-southeast-1  
+env:
+  AWS_REGION: ap-southeast-1
 
 jobs:
   Destroy:
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment }}
-
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v3
+      - name: Checkout Repository
+        uses: actions/checkout@v3
 
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v1
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ env.AWS_REGION }}
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
 
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v2
-      with:
-        terraform_wrapper: false
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_wrapper: false
 
-    - name: Set Environment Variables
-      run: |
-        echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_ENV
-        echo "ecs_cluster_name=${{ github.event.inputs.environment }}-${{ vars.ECS_CLUSTER_NAME }}" >> $GITHUB_ENV
-        echo "ecs_task_family=${{ github.event.inputs.environment }}-${{ vars.ECS_TASK_FAMILY }}" >> $GITHUB_ENV
-        echo "dynamodb_table_name=${{ github.event.inputs.environment }}-${{ vars.DYNAMODB_TABLE_NAME }}" >> $GITHUB_ENV
-        echo "ecs_service_name=${{ github.event.inputs.environment }}-${{ vars.ECS_SERVICE_NAME }}" >> $GITHUB_ENV
-        echo "container_name=${{ github.event.inputs.environment }}-${{ vars.CONTAINER_NAME }}" >> $GITHUB_ENV
-        echo "ecr_repository=${{ vars.ECR_REPOSITORY }}" >> $GITHUB_ENV
-        
-        if [ "${{ github.event.inputs.environment }}" == "staging" ]; then
-          echo "create_ecr=true" >> $GITHUB_ENV
-        else
-          echo "create_ecr=false" >> $GITHUB_ENV
-        fi
-
-    - name: Validate Environment Variables
-      run: |
-        echo "Environment: ${{ env.environment }}"
-        echo "ECS Cluster: ${{ env.ecs_cluster_name }}"
-        echo "Task Family: ${{ env.ecs_task_family }}"
-        echo "DynamoDB Table: ${{ env.dynamodb_table_name }}"
-        echo "ECS Service: ${{ env.ecs_service_name }}"
-        echo "Container: ${{ env.container_name }}"
-        echo "ECR Repo: ${{ env.ecr_repository }}"
-        echo "Create ECR: ${{ env.create_ecr }}"
-
-    - name: Terraform Init
-      run: |
-        terraform init \
-          -backend-config="bucket=${{ secrets.S3_BUCKET }}" \
-          -backend-config="key=terraform/ce8-coaching-18/${{ env.environment }}/terraform.tfstate" \
-          -backend-config="region=${{ env.AWS_REGION }}"
-
-    - name: Prepare for Destroy
-      run: |
-        # Disable immediate exit on error
-        set +e
-        
-        # 1. Clean up ECR data source if exists
-        if terraform state list | grep -q "data.aws_ecr_repository.existing_repository"; then
-          echo "Removing ECR data source from state..."
-          terraform state rm data.aws_ecr_repository.existing_repository
-        fi
-        
-        # 2. Prepare variables file
-        cat <<EOF > terraform.tfvars
-        container_name = "${{ env.container_name }}"
-        environment = "${{ env.environment }}"
-        ecs_cluster_name = "${{ env.ecs_cluster_name }}"
-        ecs_task_family = "${{ env.ecs_task_family }}"
-        dynamodb_table_name = "${{ env.dynamodb_table_name }}"
-        ecs_service_name = "${{ env.ecs_service_name }}"
-        ecr_repository = "${{ env.ecr_repository }}"
-        create_ecr = "${{ env.create_ecr }}"
-        EOF
-        
-        # 3. Refresh existing resources
-        RESOURCES=(
-          "aws_ecs_cluster.app_cluster"
-          "aws_dynamodb_table.users_table"
-          "aws_ecs_service.register_app_service"
-          "aws_ecs_task_definition.app_task"
-        )
-        
-        for resource in "${RESOURCES[@]}"; do
-          if terraform state list | grep -q "$resource"; then
-            echo "Refreshing $resource..."
-            terraform refresh -target="$resource"
+      - name: Set Environment Variables
+        run: |
+          echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_ENV
+          echo "ecs_cluster_name=${{ github.event.inputs.environment }}-${{ env.ECS_CLUSTER_NAME }}" >> $GITHUB_ENV
+          echo "ecs_task_family=${{ github.event.inputs.environment }}-${{ env.ECS_TASK_FAMILY }}" >> $GITHUB_ENV
+          echo "dynamodb_table_name=${{ github.event.inputs.environment }}-${{ env.DYNAMODB_TABLE_NAME }}" >> $GITHUB_ENV
+          echo "ecs_service_name=${{ github.event.inputs.environment }}-${{ env.ECS_SERVICE_NAME }}" >> $GITHUB_ENV
+          echo "container_name=${{ github.event.inputs.environment }}-${{ env.CONTAINER_NAME }}" >> $GITHUB_ENV
+          echo "ecr_repository=${{ github.event.inputs.environment }}-${{ env.ECR_REPOSITORY }}" >> $GITHUB_ENV
+          
+          # Set create_ecr flag dynamically based on the environment
+          if [ "${{ github.event.inputs.environment }}" == "staging" ]; then
+            echo "create_ecr=true" >> $GITHUB_ENV
+          else
+            echo "create_ecr=false" >> $GITHUB_ENV
           fi
-        done
-        
-        # Re-enable error checking
-        set -e
 
-    - name: Terraform Destroy
-      run: |
-        # Destroy resources in proper order
-        set +e
-        
-        RESOURCES=(
-          "aws_ecs_service.register_app_service"
-          "aws_ecs_task_definition.app_task"
-          "aws_ecs_cluster.app_cluster"
-          "aws_dynamodb_table.users_table"
-        )
-        
-        for resource in "${RESOURCES[@]}"; do
-          if terraform state list | grep -q "$resource"; then
-            echo "Destroying $resource..."
-            terraform destroy -auto-approve -target="$resource"
-          fi
-        done
-        
-        # Full destroy if anything remains
-        if [ $(terraform state list | wc -l) -gt 0 ]; then
-          echo "Performing final destroy..."
-          terraform destroy -auto-approve
-        fi
-        
-        set -e
+      - name: Validate Environment Variables
+        run: |
+          echo "Environment: ${{ env.environment }}"
+          echo "ECS Cluster: ${{ env.ecs_cluster_name }}"
+          echo "Task Family: ${{ env.ecs_task_family }}"
+          echo "DynamoDB Table: ${{ env.dynamodb_table_name }}"
+          echo "ECS Service: ${{ env.ecs_service_name }}"
+          echo "Container: ${{ env.container_name }}"
+          echo "ECR Repo: ${{ env.ecr_repository }}"
+          echo "Create ECR: ${{ env.create_ecr }}"
 
-    - name: Cleanup ECR Repository (if exists)
-      if: ${{ env.create_ecr == 'true' }}
-      run: |
-        aws ecr delete-repository \
-          --repository-name ${{ env.ecr_repository }} \
-          --force 2>/dev/null || true
+      - name: Terraform Init
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ secrets.S3_BUCKET }}" \
+            -backend-config="key=terraform/ce8-coaching-18/${{ env.environment }}/terraform.tfstate" \
+            -backend-config="region=${{ env.AWS_REGION }}"
+
+      - name: Debug Variables
+        run: |
+          echo "ECS Cluster Name: ${{ env.ecs_cluster_name }}"
+          echo "ECS Task Family: ${{ env.ecs_task_family }}"
+          echo "Environment: ${{ env.environment }}"
+          echo "DynamoDB: ${{ env.dynamodb_table_name }}"
+          echo "Container Name: ${{ env.container_name }}"
+          echo "ECR Repository: ${{ env.ecr_repository }}"
+          echo "ECS Service: ${{ env.ecs_service_name }}"
+
+      - name: Terraform Destroy
+        run: |
+          terraform destroy -auto-approve \
+            -var="ecs_cluster_name=${{ env.ecs_cluster_name }}" \
+            -var="ecs_task_family=${{ env.ecs_task_family }}" \
+            -var="environment=${{ env.environment }}" \
+            -var="dynamodb_table_name=${{ env.dynamodb_table_name }}" \
+            -var="ecs_service_name=${{ env.ecs_service_name }}" \
+            -var="container_name=${{ env.container_name }}" \
+            -var="ecr_repository=${{ env.ecr_repository }}"
