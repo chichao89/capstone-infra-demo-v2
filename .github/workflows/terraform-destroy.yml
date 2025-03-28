@@ -1,63 +1,84 @@
 name: Terraform Destroy
 
-on: 
+on:
   workflow_dispatch:
     inputs:
       environment:
-        description: "Select environment"
+        description: Select environment
         required: true
         type: choice
         options:
           - staging
           - production
 
-env:            
-  AWS_REGION: ap-southeast-1  
+env:
+  AWS_REGION: ap-southeast-1
 
 jobs:
   Destroy:
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment }}
-
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v3
+      - name: Checkout Repository
+        uses: actions/checkout@v3
 
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v1
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ env.AWS_REGION }}
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
 
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v2
-      with:
-        terraform_wrapper: false
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_wrapper: false
 
-    - name: Terraform Init with Dynamic Backend Config
-      run: |
-        rm -rf .terraform  # ✅ Ensures correct backend is used
-        terraform init \
-          -reconfigure \
-          -backend-config="key=terraform/ce8-coaching-18/${{ github.event.inputs.environment }}/terraform.tfstate"
+      - name: Set Environment Variables
+        run: |
+          echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_ENV
+          echo "ecs_cluster_name=${{ github.event.inputs.environment }}-${{ vars.ECS_CLUSTER_NAME }}" >> $GITHUB_ENV
+          echo "ecs_task_family=${{ github.event.inputs.environment }}-${{ vars.ECS_TASK_FAMILY }}" >> $GITHUB_ENV
+          echo "dynamodb_table_name=${{ github.event.inputs.environment }}-${{ vars.DYNAMODB_TABLE_NAME }}" >> $GITHUB_ENV
+          echo "ecs_service_name=${{ github.event.inputs.environment }}-${{ vars.ECS_SERVICE_NAME }}" >> $GITHUB_ENV
+          echo "container_name=${{ github.event.inputs.environment }}-${{ vars.CONTAINER_NAME }}" >> $GITHUB_ENV
+          echo "ecr_repository=${{ github.event.inputs.environment }}-${{ vars.ECR_REPOSITORY }}" >> $GITHUB_ENV
+          
+      - name: Validate Environment Variables
+        run: |
+          echo "Environment: ${{ env.environment }}"
+          echo "ECS Cluster: ${{ env.ecs_cluster_name }}"
+          echo "Task Family: ${{ env.ecs_task_family }}"
+          echo "DynamoDB Table: ${{ env.dynamodb_table_name }}"
+          echo "ECS Service: ${{ env.ecs_service_name }}"
+          echo "Container: ${{ env.container_name }}"
+          echo "ECR Repo: ${{ env.ecr_repository }}"
+          echo "Create ECR: ${{ env.create_ecr }}"
 
-    - name: Debug Variables
-      run: |
-        echo "ECS Cluster Name: ${{ vars.TF_VAR_ECS_CLUSTER_NAME }}"
-        echo "ECS Task Family: ${{ vars.TF_VAR_ECS_TASK_FAMILY }}"
-        echo "Environment: ${{ vars.TF_VAR_ENVIRONMENT }}"
-        echo "DyanamoDB: ${{ vars.TF_VAR_DYNAMODB_TABLE_NAME }}"
-        echo "Container Name: ${{ vars.TF_VAR_CONTAINER_NAME }}"
-        echo "ECR Repository: ${{ vars.TF_VAR_ECR_REPOSITORY }}"
+      - name: Terraform Init
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ secrets.S3_BUCKET }}" \
+            -backend-config="key=terraform/ce8-coaching-18/${{ env.environment }}/terraform.tfstate" \
+            -backend-config="region=${{ env.AWS_REGION }}"
 
-    - name: Terraform Destroy
-      run: |
-        terraform destroy -auto-approve \
-          -var="ecs_cluster_name=${{ vars.TF_VAR_ECS_CLUSTER_NAME }}" \
-          -var="ecs_task_family=${{ vars.TF_VAR_ECS_TASK_FAMILY }}" \
-          -var="environment=${{ vars.TF_VAR_ENVIRONMENT }}" \
-          -var="dynamodb_table_name=${{ vars.TF_VAR_DYNAMODB_TABLE_NAME }}" \
-          -var="ecs_service_name=${{ vars.TF_VAR_ECS_SERVICE_NAME }}" \
-          -var="container_name=${{ vars.TF_VAR_CONTAINER_NAME }}" \
-          -var="ecr_repository=${{ vars.TF_VAR_ECR_REPOSITORY }}"
+      - name: Debug Variables
+        run: |
+          echo "ECS Cluster Name: ${{ env.ecs_cluster_name }}"
+          echo "ECS Task Family: ${{ env.ecs_task_family }}"
+          echo "Environment: ${{ env.environment }}"
+          echo "DynamoDB: ${{ env.dynamodb_table_name }}"
+          echo "Container Name: ${{ env.container_name }}"
+          echo "ECR Repository: ${{ env.ecr_repository }}"
+          echo "ECS Service: ${{ env.ecs_service_name }}"
+
+      - name: Terraform Destroy
+        run: |
+          terraform destroy -auto-approve \
+            -var="ecs_cluster_name=${{ env.ecs_cluster_name }}" \
+            -var="ecs_task_family=${{ env.ecs_task_family }}" \
+            -var="environment=${{ env.environment }}" \
+            -var="dynamodb_table_name=${{ env.dynamodb_table_name }}" \
+            -var="ecs_service_name=${{ env.ecs_service_name }}" \
+            -var="container_name=${{ env.container_name }}" \
+            -var="ecr_repository=${{ env.ecr_repository }}"

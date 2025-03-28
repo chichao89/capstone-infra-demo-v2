@@ -9,7 +9,7 @@ resource "aws_dynamodb_table" "users_table" {
   }
 
   tags = {
-    Name        = "${var.dynamodb_table_name}-${var.environment}"
+    Name        = "${var.dynamodb_table_name}"
     Environment = var.environment
   }
 }
