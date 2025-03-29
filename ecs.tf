@@ -8,6 +8,12 @@ resource "aws_ecs_cluster" "app_cluster" {
   }
 }
 
+# CloudWatch Log Group for ECS Task Logs
+resource "aws_cloudwatch_log_group" "ecs_log_group" {
+  name              = "/ecs/${var.ecs_task_family}"
+  retention_in_days = 7
+}
+
 # ECS Task Definition for App
 resource "aws_ecs_task_definition" "app_task" {
   family                   = var.ecs_task_family
@@ -23,11 +29,8 @@ resource "aws_ecs_task_definition" "app_task" {
       name      = var.container_name
       image =   "${aws_ecr_repository.register_service_repo.repository_url}:${var.environment}" 
       essential = true
-      memory    = "512"
-      memory    = "512"
       memory    = var.ecs_container_memory   # Dynamic memory for container
       cpu       = var.ecs_container_cpu      # Dynamic CPU for container
-      essential = true
       environment = [
         { "name" : "AWS_REGION", "value" : var.aws_region },
         { "name" : "DYNAMODB_TABLE", "value" : "${var.dynamodb_table_name}" }
@@ -43,7 +46,7 @@ resource "aws_ecs_task_definition" "app_task" {
       options = {
         awslogs-group         = "/ecs/${var.ecs_task_family}"
         awslogs-region        = var.aws_region
-        awslogs-stream-prefix = "ecs"
+        awslogs-stream-prefix = var.container_name
       }
     }
     }
