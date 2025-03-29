@@ -1,6 +1,11 @@
 # ECS Cluster Definition
 resource "aws_ecs_cluster" "app_cluster" {
   name = var.ecs_cluster_name
+
+  setting {
+    name  = "containerInsights"
+    value = "enabled"
+  }
 }
 
 # ECS Task Definition for App
@@ -32,7 +37,15 @@ resource "aws_ecs_task_definition" "app_task" {
           containerPort = var.container_port
           hostPort      = var.container_port
         }
-      ]
+      ],
+      logConfiguration = {
+      logDriver = "awslogs"
+      options = {
+        awslogs-group         = "/ecs/${var.ecs_task_family}"
+        awslogs-region        = var.aws_region
+        awslogs-stream-prefix = "ecs"
+      }
+    }
     }
   ])
 }

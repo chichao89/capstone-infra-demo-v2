@@ -15,7 +15,12 @@ resource "aws_iam_role" "ecs_task_role" {
     ]
   })
 }
-
+# CloudWatch Agent Policy Attachment
+resource "aws_iam_policy_attachment" "cloudwatch_agent_policy" {
+  name       = "cloudwatchAgentPolicy-${var.environment}"
+  roles      = [aws_iam_role.ecs_execution_role.name]
+  policy_arn = "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
+}
 # DynamoDB Access Policy for ECS Task (Unique per environment)
 resource "aws_iam_policy" "dynamodb_access" {
   name        = "DynamoDBAccessPolicy-${var.environment}"
@@ -91,7 +96,15 @@ resource "aws_iam_role_policy" "ecs_execution_role_policy" {
         Effect = "Allow",
         Action = [
           "logs:CreateLogStream",
+          "logs:CreateLogGroup",
           "logs:PutLogEvents"
+        ],
+        Resource = "arn:aws:logs:::*"
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "cloudwatch:PutMetricData"
         ],
         Resource = "*"
       }
