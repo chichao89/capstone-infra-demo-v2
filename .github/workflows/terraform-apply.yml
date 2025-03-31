@@ -54,12 +54,12 @@ jobs:
     - name: Set Terraform Backend Config
       run: |
         echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_ENV
-        echo "ecs_cluster_name=${{ github.event.inputs.environment }}-${{ secrets.ECS_CLUSTER_NAME }}" >> $GITHUB_ENV
-        echo "ecs_task_family=${{ github.event.inputs.environment }}-${{ secrets.ECS_TASK_FAMILY }}" >> $GITHUB_ENV
-        echo "ecs_service_name=${{ github.event.inputs.environment }}-${{ secrets.ECS_SERVICE_NAME }}" >> $GITHUB_ENV
-        echo "dynamodb_table_name=${{ github.event.inputs.environment }}-${{ secrets.DYNAMODB_TABLE_NAME }}" >> $GITHUB_ENV
-        echo "container_name=${{ github.event.inputs.environment }}-${{ secrets.CONTAINER_NAME }}" >> $GITHUB_ENV
-        echo "ecr_repository=${{ github.event.inputs.environment }}-${{ secrets.ECR_REPOSITORY }}" >> $GITHUB_ENV
+        echo "ecs_cluster_name=${{ github.event.inputs.environment }}-${{ vars.ECS_CLUSTER_NAME }}" >> $GITHUB_ENV
+        echo "ecs_task_family=${{ github.event.inputs.environment }}-${{ vars.ECS_TASK_FAMILY }}" >> $GITHUB_ENV
+        echo "ecs_service_name=${{ github.event.inputs.environment }}-${{ vars.ECS_SERVICE_NAME }}" >> $GITHUB_ENV
+        echo "dynamodb_table_name=${{ github.event.inputs.environment }}-${{ vars.DYNAMODB_TABLE_NAME }}" >> $GITHUB_ENV
+        echo "container_name=${{ github.event.inputs.environment }}-${{ vars.CONTAINER_NAME }}" >> $GITHUB_ENV
+        echo "ecr_repository=${{ github.event.inputs.environment }}-${{ vars.ECR_REPOSITORY }}" >> $GITHUB_ENV
 
     - name: Terraform Init
       run: |
