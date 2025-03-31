@@ -23,7 +23,7 @@ env:
 jobs:
   Terraform-Plan:
     runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment || 'staging' }}
+    environment: ${{ github.event.inputs.environment }}
 
     steps:
     - name: Checkout Repository
@@ -50,17 +50,22 @@ jobs:
       with:
         soft_fail: true
 
-     # - name: Run Checkov Security Scan
-     #  uses: bridgecrewio/checkov-action@v12
-     # with:
-     #   soft_fail: true
-
     - name: Run Trivy Security Scan
       uses: aquasecurity/trivy-action@master
       with:
         scan-type: "config"
         format: "table"
         severity: "HIGH,CRITICAL"
+
+    - name: Set Terraform Backend Config
+      run: |
+        echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_ENV
+        echo "ecs_cluster_name=${{ github.event.inputs.environment }}-${{ secrets.ECS_CLUSTER_NAME }}" >> $GITHUB_ENV
+        echo "ecs_task_family=${{ github.event.inputs.environment }}-${{ secrets.ECS_TASK_FAMILY }}" >> $GITHUB_ENV
+        echo "ecs_service_name=${{ github.event.inputs.environment }}-${{ secrets.ECS_SERVICE_NAME }}" >> $GITHUB_ENV
+        echo "dynamodb_table_name=${{ github.event.inputs.environment }}-${{ secrets.DYNAMODB_TABLE_NAME }}" >> $GITHUB_ENV
+        echo "container_name=${{ github.event.inputs.environment }}-${{ secrets.CONTAINER_NAME }}" >> $GITHUB_ENV
+        echo "ecr_repository=${{ github.event.inputs.environment }}-${{ secrets.ECR_REPOSITORY }}" >> $GITHUB_ENV
 
     - name: Terraform Init
       run: |
@@ -88,7 +93,7 @@ jobs:
     needs: Terraform-Plan
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment }}
-    if: github.event_name == 'push' || github.event.inputs.environment == 'staging' 
+    if: github.event_name == 'push' || github.event.inputs.environment == 'staging'
 
     steps:
     - name: Checkout Repository
