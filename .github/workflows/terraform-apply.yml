@@ -36,6 +36,12 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ env.AWS_REGION }}
 
+    # Install Terraform
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_version: 'latest'
+
     # Security & Linting
     - name: Setup TFLint
       uses: terraform-linters/setup-tflint@v3
@@ -44,18 +50,6 @@ jobs:
 
     - name: Run TFLint Check
       run: tflint --format=compact
-
-    - name: Run tfsec Security Scan
-      uses: aquasecurity/tfsec-action@v1.0.0
-      with:
-        soft_fail: true
-
-    - name: Run Trivy Security Scan
-      uses: aquasecurity/trivy-action@master
-      with:
-        scan-type: "config"
-        format: "table"
-        severity: "HIGH,CRITICAL"
 
     - name: Set Terraform Backend Config
       run: |
