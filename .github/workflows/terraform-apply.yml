@@ -1,4 +1,4 @@
-name: Terraform Apply
+name: Terraform CI/CD
 
 on:
   pull_request:
@@ -21,10 +21,9 @@ env:
   AWS_REGION: ap-southeast-1
 
 jobs:
-  Terraform-Plan:
+  Terraform-Deploy:
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment }}
-
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
@@ -41,7 +40,6 @@ jobs:
         with:
           terraform_version: 'latest'
 
-      # Security & Linting
       - name: Setup TFLint
         uses: terraform-linters/setup-tflint@v3
         with:
@@ -59,7 +57,7 @@ jobs:
           echo "dynamodb_table_name=${{ github.event.inputs.environment }}-${{ vars.DYNAMODB_TABLE_NAME }}" >> $GITHUB_ENV
           echo "container_name=${{ github.event.inputs.environment }}-${{ vars.CONTAINER_NAME }}" >> $GITHUB_ENV
           echo "ecr_repository=${{ github.event.inputs.environment }}-${{ vars.ECR_REPOSITORY }}" >> $GITHUB_ENV
-          
+
       - name: Terraform Init
         run: |
           terraform init \
@@ -80,42 +78,9 @@ jobs:
             -var="dynamodb_table_name=${{ env.dynamodb_table_name }}" \
             -var="container_name=${{ env.container_name }}" \
             -var="ecr_repository=${{ env.ecr_repository }}" \
-            -var="create_ecr=${{ env.create_ecr }}" \
             -out=tfplan
 
-      - name: Upload Terraform Plan Artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: tfplan
-          path: tfplan
-
-  Terraform-Apply:
-    needs: Terraform-Plan
-    runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment }}
-    if: github.event_name == 'push' || github.event.inputs.environment == 'staging'
-
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
-
-      - name: Download Terraform Plan Artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: tfplan
-          path: .
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_version: 'latest'
-
-      - name: Terraform Apply (Staging)
-        if: github.event.inputs.environment == 'staging'
-        run: terraform apply -auto-approve tfplan
-
-      - name: Terraform Apply (Production)
-        if: github.event.inputs.environment == 'production'
+      - name: Terraform Apply
         run: terraform apply -auto-approve tfplan
 
       - name: Generate Outputs
