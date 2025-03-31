@@ -9,7 +9,7 @@ terraform {
     }
     null = {
       source = "hashicorp/null"
-      version = "~> 5.0"  # Version for the null provider
+      version = "~> 3.0"  # Version for the null provider
     }
   }
 }
