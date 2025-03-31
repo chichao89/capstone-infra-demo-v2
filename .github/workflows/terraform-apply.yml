@@ -50,10 +50,10 @@ jobs:
       with:
         soft_fail: true
 
-    - name: Run Checkov Security Scan
-      uses: bridgecrewio/checkov-action@v12
-      with:
-        soft_fail: true
+     # - name: Run Checkov Security Scan
+     #  uses: bridgecrewio/checkov-action@v12
+     # with:
+     #   soft_fail: true
 
     - name: Run Trivy Security Scan
       uses: aquasecurity/trivy-action@master
