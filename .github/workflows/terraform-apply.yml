@@ -36,7 +36,6 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ env.AWS_REGION }}
 
-    # Install Terraform
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v2
       with:
@@ -97,13 +96,7 @@ jobs:
       if: github.event.inputs.environment == 'staging'
       run: terraform apply -auto-approve tfplan
 
-    - name: Request Manual Approval for Production
-      if: github.event.inputs.environment == 'production'
-      uses: hmarr/auto-approve-action@v3
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Terraform Apply (Production - After Approval)
+    - name: Terraform Apply (Production - Auto Approval)
       if: github.event.inputs.environment == 'production'
       run: terraform apply -auto-approve tfplan
 
