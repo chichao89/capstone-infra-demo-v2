@@ -27,13 +27,13 @@ resource "aws_ecs_task_definition" "app_task" {
   container_definitions = jsonencode([
     {
       name      = var.container_name
-      image =   "${aws_ecr_repository.register_service_repo.repository_url}:${var.environment}" 
+      image     = "${aws_ecr_repository.register_service_repo.repository_url}:${var.environment}" 
       essential = true
       memory    = var.ecs_container_memory   # Dynamic memory for container
       cpu       = var.ecs_container_cpu      # Dynamic CPU for container
       environment = [
         { "name" : "AWS_REGION", "value" : var.aws_region },
-        { "name" : "DYNAMODB_TABLE", "value" : "${var.dynamodb_table_name}" }
+        { "name" : "DYNAMODB_TABLE", "value" : var.dynamodb_table_name }
       ],
       portMappings = [
         {
@@ -42,13 +42,13 @@ resource "aws_ecs_task_definition" "app_task" {
         }
       ],
       logConfiguration = {
-      logDriver = "awslogs"
-      options = {
-        awslogs-group         = "/ecs/${var.ecs_task_family}"
-        awslogs-region        = var.aws_region
-        awslogs-stream-prefix = var.container_name
+        logDriver = "awslogs"
+        options = {
+          awslogs-group         = "/ecs/${var.ecs_task_family}"
+          awslogs-region        = var.aws_region
+          awslogs-stream-prefix = var.container_name
+        }
       }
-    }
     }
   ])
 }

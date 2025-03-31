@@ -39,7 +39,7 @@ resource "aws_iam_policy" "dynamodb_access" {
           "dynamodb:Scan",
           "dynamodb:UpdateItem"
         ],
-        Resource = "${aws_dynamodb_table.users_table.arn}"
+        Resource = aws_dynamodb_table.users_table.arn
       }
     ]
   })
