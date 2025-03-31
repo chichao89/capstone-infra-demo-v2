@@ -1,6 +1,12 @@
-name: Terraform Apply
+name: Terraform CI/CD
 
 on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       environment:
@@ -15,14 +21,14 @@ env:
   AWS_REGION: ap-southeast-1
 
 jobs:
-  Terraform-Deploy:
+  Terraform-Plan:
     runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment }}
+    environment: ${{ github.event.inputs.environment || 'staging' }}
 
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v3
-    
+
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v1
       with:
@@ -30,25 +36,31 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ env.AWS_REGION }}
 
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v2
+    # Security & Linting
+    - name: Setup TFLint
+      uses: terraform-linters/setup-tflint@v3
+      with:
+        tflint_version: latest
 
-    - name: Set Environment Variables
-      run: |
-        echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_ENV
-        echo "ecs_cluster_name=${{ github.event.inputs.environment }}-${{ vars.ECS_CLUSTER_NAME }}" >> $GITHUB_ENV
-        echo "ecs_task_family=${{ github.event.inputs.environment }}-${{ vars.ECS_TASK_FAMILY }}" >> $GITHUB_ENV
-        echo "ecs_service_name=${{ github.event.inputs.environment }}-${{ vars.ECS_SERVICE_NAME }}" >> $GITHUB_ENV
-        echo "dynamodb_table_name=${{ github.event.inputs.environment }}-${{ vars.DYNAMODB_TABLE_NAME }}" >> $GITHUB_ENV
-        echo "container_name=${{ github.event.inputs.environment }}-${{ vars.CONTAINER_NAME }}" >> $GITHUB_ENV
-        echo "ecr_repository=${{ github.event.inputs.environment }}-${{ vars.ECR_REPOSITORY }}" >> $GITHUB_ENV
+    - name: Run TFLint Check
+      run: tflint --format=compact
 
-        # Set create_ecr flag dynamically based on the environment
-        if [ "${{ github.event.inputs.environment }}" == "staging" ]; then
-          echo "create_ecr=true" >> $GITHUB_ENV
-        else
-          echo "create_ecr=false" >> $GITHUB_ENV
-        fi
+    - name: Run tfsec Security Scan
+      uses: aquasecurity/tfsec-action@v1.0.0
+      with:
+        soft_fail: true
+
+    - name: Run Checkov Security Scan
+      uses: bridgecrewio/checkov-action@v12
+      with:
+        soft_fail: true
+
+    - name: Run Trivy Security Scan
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: "config"
+        format: "table"
+        severity: "HIGH,CRITICAL"
 
     - name: Terraform Init
       run: |
@@ -70,10 +82,30 @@ jobs:
           -var="dynamodb_table_name=${{ env.dynamodb_table_name }}" \
           -var="container_name=${{ env.container_name }}" \
           -var="ecr_repository=${{ env.ecr_repository }}" \
-          -var="create_ecr=${{ env.create_ecr }}" \
           -out=tfplan
 
-    - name: Terraform Apply
+  Terraform-Apply:
+    needs: Terraform-Plan
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    if: github.event_name == 'push' || github.event.inputs.environment == 'staging' 
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    - name: Terraform Apply (Staging)
+      if: github.event.inputs.environment == 'staging'
+      run: terraform apply -auto-approve tfplan
+
+    - name: Request Manual Approval for Production
+      if: github.event.inputs.environment == 'production'
+      uses: hmarr/auto-approve-action@v3
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Terraform Apply (Production - After Approval)
+      if: github.event.inputs.environment == 'production'
       run: terraform apply -auto-approve tfplan
 
     - name: Generate Outputs
