@@ -1,8 +1,5 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <title>Capstone RegisterApp - Infrastructure</title>
-</head>
 <body>
 
 <h1>Capstone RegisterApp - Infrastructure</h1>
