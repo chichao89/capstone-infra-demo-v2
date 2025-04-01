@@ -8,7 +8,7 @@
 <h1>Capstone RegisterApp - Infrastructure</h1>
 
 <h2>Overview</h2>
-<p>The <strong>Capstone RegisterApp</strong> is a web application built using Flask, containerized with Docker, and deployed on <strong>AWS ECS (Fargate)</strong>. The infrastructure is managed using <strong>Terraform</strong>, ensuring automated and scalable deployments.</p>
+<p>The <strong>Capstone RegisterApp</strong> is a web application built using Flask, containerized with Docker, and deployed on <strong>AWS ECS (Fargate)</strong>. The infrastructure is managed using <strong>Terraform</strong> and automated via <strong>GitHub Actions</strong> for continuous deployment.</p>
 
 <h3>Deployment Environments</h3>
 <ul>
@@ -24,7 +24,6 @@
     <li>✅ <strong>AWS ECS (Fargate)</strong> - Serverless container management</li>
     <li>✅ <strong>VPC & Security Groups</strong> - Secure networking & traffic control</li>
     <li>✅ <strong>DynamoDB</strong> - NoSQL database for persistence</li>
-    <li>✅ <strong>Terraform Workspaces</strong> - Dynamic environment selection</li>
 </ul>
 
 <h3>Infrastructure Flow</h3>
@@ -35,48 +34,45 @@
     <li><strong>Application Access</strong> - The service runs within a private <strong>VPC</strong>, accessible via its assigned public IP</li>
 </ol>
 
-<h2>Prerequisites</h2>
+<h2>GitHub Actions Workflow</h2>
+<p>All deployments and infrastructure changes are managed through <strong>GitHub Actions</strong>, removing the need for manual Terraform CLI execution.</p>
+
+<h3>Available Workflows</h3>
 <ul>
-    <li>✅ <strong>Terraform ≥ 0.12</strong></li>
-    <li>✅ <strong>AWS Account</strong> with IAM permissions</li>
-    <li>✅ <strong>AWS CLI</strong> configured with appropriate credentials</li>
+    <li>🔹 <strong>Terraform Apply</strong> - Deploys the infrastructure and application.</li>
+    <li>🔹 <strong>Terraform Destroy</strong> - Destroys the infrastructure for a selected environment.</li>
 </ul>
 
-<h3>Setup AWS Environment Secrets</h3>
-<p>Set the following <strong>secrets</strong> in your environment (e.g., GitHub Actions or local <code>.env</code> file):</p>
+<h3>Triggering a Deployment</h3>
+<p>To deploy the application via GitHub Actions:</p>
+<ol>
+    <li>Navigate to <strong>GitHub Repository → Actions → Terraform Apply</strong></li>
+    <li>Click <strong>"Run Workflow"</strong></li>
+    <li>Select an environment (<strong>staging</strong> or <strong>production</strong>)</li>
+    <li>Click <strong>"Run"</strong> to start deployment</li>
+</ol>
+
+<h3>Destroying Resources</h3>
+<p>To remove the infrastructure:</p>
+<ol>
+    <li>Navigate to <strong>GitHub Repository → Actions → Terraform Destroy</strong></li>
+    <li>Click <strong>"Run Workflow"</strong></li>
+    <li>Select an environment (<strong>staging</strong> or <strong>production</strong>)</li>
+    <li>Click <strong>"Run"</strong> to start deletion</li>
+</ol>
+
+<h2>Environment Variables</h2>
+<p>The deployment workflow uses environment variables instead of Terraform workspaces.</p>
+<p>Set these in your GitHub repository secrets or local environment:</p>
 <pre>
 AWS_ACCESS_KEY_ID=your-aws-access-key
 AWS_SECRET_ACCESS_KEY=your-aws-secret-key
-</pre>
-
-<h3>Environment Variables for Terraform</h3>
-<p>Set these <strong>Terraform variables</strong> as environment variables before running deployments:</p>
-<pre>
 TF_VAR_DYNAMODB_TABLE_NAME=your-dynamodb-table
 TF_VAR_ECS_CLUSTER_NAME=your-ecs-cluster-name
 TF_VAR_ECS_SERVICE_NAME=your-ecs-service-name
 TF_VAR_ECS_TASK_FAMILY=your-ecs-task-family
 TF_VAR_ENVIRONMENT=staging  # or "production"
 </pre>
-
-<h2>Deployment Workflow</h2>
-<ol>
-    <li><strong>Initialize Terraform</strong>
-        <pre>terraform init</pre>
-    </li>
-    <li><strong>Select or Create a Workspace</strong>
-        <pre>terraform workspace select &lt;environment&gt; || terraform workspace new &lt;environment&gt;</pre>
-    </li>
-    <li><strong>Plan the Deployment</strong>
-        <pre>terraform plan -var="environment=staging"  # Change "staging" to "production" if needed</pre>
-    </li>
-    <li><strong>Apply the Configuration</strong>
-        <pre>terraform apply -var="environment=staging" -auto-approve</pre>
-    </li>
-    <li><strong>Destroy Resources (if needed)</strong>
-        <pre>terraform destroy -var="environment=staging" -auto-approve</pre>
-    </li>
-</ol>
 
 <h2>Outputs</h2>
 <table border="1">
@@ -163,23 +159,14 @@ TF_VAR_ENVIRONMENT=staging  # or "production"
     <li>🔹 <strong>Application Load Balancer (ALB)</strong> - Improve routing and security</li>
     <li>🔹 <strong>Autoscaling</strong> - Dynamically adjust ECS tasks based on traffic</li>
     <li>🔹 <strong>Monitoring & Logging</strong> - Implement CloudWatch or Prometheus for better observability</li>
-    <li>🔹 <strong>CI/CD Pipeline</strong> - Automate deployments with GitHub Actions or AWS CodePipeline</li>
-</ul>
-
-<h2>Notes</h2>
-<ul>
-    <li>Ensure <strong>AWS credentials</strong> are set up before running Terraform</li>
-    <li>Modify <strong>security group</strong> settings for production security</li>
-    <li>Adjust <strong>desired_count</strong> based on deployment needs</li>
+    <li>🔹 <strong>CI/CD Enhancements</strong> - Extend GitHub Actions for blue/green deployments</li>
 </ul>
 
 <h2>License</h2>
 <p>MIT License</p>
 
 <h2>Final Thoughts</h2>
-<p>This <strong>README</strong> provides a <strong>clear, structured</strong> guide for deploying your Flask app on AWS ECS using Terraform.</p>
+<p>This <strong>README</strong> now reflects an automated GitHub Actions-based infrastructure deployment, making Terraform commands unnecessary.</p>
 
 </body>
 </html>
-
-
