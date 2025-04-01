@@ -116,8 +116,8 @@ TF_VAR_DYNAMODB_TABLE_NAME=dynamodb-table
     <li>Adjust <strong>desired_count</strong> based on deployment needs.</li>
 </ul>
 
-<h2>License</h2>
-<p>MIT License</p>
+<h2>Web App Link</h2>
+<p>https://github.com/naoruki/capstone_webapp_group2_v2</p>
 
 </body>
 </html>
