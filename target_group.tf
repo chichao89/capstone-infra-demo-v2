@@ -1,9 +1,10 @@
-# Target Group for ECS
 resource "aws_lb_target_group" "ecs_tg" {
   name     = "ecs-target-group"
   port     = var.container_port
   protocol = "HTTP"
   vpc_id   = module.vpc.vpc_id
+
+  target_type = "ip"  # Set target type to "ip" for compatibility with awsvpc
 
   health_check {
     interval            = 30
