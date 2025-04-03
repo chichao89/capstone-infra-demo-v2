@@ -4,8 +4,8 @@ module "vpc" {
   name = "group2-vpc"
   cidr = "10.0.0.0/16"
 
-  azs                = ["ap-southeast-1a", "ap-southeast-1b", "ap-southeast-1c"]  # Updated AZs for 3 AZs
-  public_subnets     = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]  # Updated to reflect 3 subnets
+  azs                = ["ap-southeast-1a"]
+  public_subnets     = ["10.0.1.0/24", "10.0.2.0/24"]
   enable_nat_gateway = false
 }
 
