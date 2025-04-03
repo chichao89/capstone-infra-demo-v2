@@ -1,6 +1,12 @@
 name: Terraform Apply
 
 on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       environment:
@@ -18,68 +24,69 @@ jobs:
   Terraform-Deploy:
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment }}
-
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v3
-    
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v1
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ env.AWS_REGION }}
+      - name: Checkout Repository
+        uses: actions/checkout@v3
 
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v2
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
 
-    - name: Set Environment Variables
-      run: |
-        echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_ENV
-        echo "ecs_cluster_name=${{ github.event.inputs.environment }}-${{ vars.ECS_CLUSTER_NAME }}" >> $GITHUB_ENV
-        echo "ecs_task_family=${{ github.event.inputs.environment }}-${{ vars.ECS_TASK_FAMILY }}" >> $GITHUB_ENV
-        echo "ecs_service_name=${{ github.event.inputs.environment }}-${{ vars.ECS_SERVICE_NAME }}" >> $GITHUB_ENV
-        echo "dynamodb_table_name=${{ github.event.inputs.environment }}-${{ vars.DYNAMODB_TABLE_NAME }}" >> $GITHUB_ENV
-        echo "container_name=${{ github.event.inputs.environment }}-${{ vars.CONTAINER_NAME }}" >> $GITHUB_ENV
-        echo "ecr_repository=${{ github.event.inputs.environment }}-${{ vars.ECR_REPOSITORY }}" >> $GITHUB_ENV
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 'latest'
 
-        # Set create_ecr flag dynamically based on the environment
-        if [ "${{ github.event.inputs.environment }}" == "staging" ]; then
-          echo "create_ecr=true" >> $GITHUB_ENV
-        else
-          echo "create_ecr=false" >> $GITHUB_ENV
-        fi
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v3
+        with:
+          tflint_version: latest
 
-    - name: Terraform Init
-      run: |
-        terraform init \
-          -backend-config="bucket=${{ secrets.S3_BUCKET }}" \
-          -backend-config="key=terraform/ce8-coaching-18/${{ env.environment }}/terraform.tfstate" \
-          -backend-config="region=${{ env.AWS_REGION }}" 
+      - name: Run TFLint Check
+        run: tflint --format=compact
 
-    - name: Terraform Validate
-      run: terraform validate
+      - name: Set Terraform Backend Config
+        run: |
+          echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_ENV
+          echo "ecs_cluster_name=${{ github.event.inputs.environment }}-${{ vars.ECS_CLUSTER_NAME }}" >> $GITHUB_ENV
+          echo "ecs_task_family=${{ github.event.inputs.environment }}-${{ vars.ECS_TASK_FAMILY }}" >> $GITHUB_ENV
+          echo "ecs_service_name=${{ github.event.inputs.environment }}-${{ vars.ECS_SERVICE_NAME }}" >> $GITHUB_ENV
+          echo "dynamodb_table_name=${{ github.event.inputs.environment }}-${{ vars.DYNAMODB_TABLE_NAME }}" >> $GITHUB_ENV
+          echo "container_name=${{ github.event.inputs.environment }}-${{ vars.CONTAINER_NAME }}" >> $GITHUB_ENV
+          echo "ecr_repository=${{ github.event.inputs.environment }}-${{ vars.ECR_REPOSITORY }}" >> $GITHUB_ENV
 
-    - name: Terraform Plan
-      run: |
-        terraform plan \
-          -var="environment=${{ env.environment }}" \
-          -var="ecs_cluster_name=${{ env.ecs_cluster_name }}" \
-          -var="ecs_task_family=${{ env.ecs_task_family }}" \
-          -var="ecs_service_name=${{ env.ecs_service_name }}" \
-          -var="dynamodb_table_name=${{ env.dynamodb_table_name }}" \
-          -var="container_name=${{ env.container_name }}" \
-          -var="ecr_repository=${{ env.ecr_repository }}" \
-          -var="create_ecr=${{ env.create_ecr }}" \
-          -out=tfplan
+      - name: Terraform Init
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ secrets.S3_BUCKET }}" \
+            -backend-config="key=terraform/ce8-coaching-18/${{ env.environment }}/terraform.tfstate" \
+            -backend-config="region=${{ env.AWS_REGION }}" 
 
-    - name: Terraform Apply
-      run: terraform apply -auto-approve tfplan
+      - name: Terraform Validate
+        run: terraform validate
 
-    - name: Generate Outputs
-      run: terraform output > tf_outputs.txt
+      - name: Terraform Plan
+        run: |
+          terraform plan \
+            -var="environment=${{ env.environment }}" \
+            -var="ecs_cluster_name=${{ env.ecs_cluster_name }}" \
+            -var="ecs_task_family=${{ env.ecs_task_family }}" \
+            -var="ecs_service_name=${{ env.ecs_service_name }}" \
+            -var="dynamodb_table_name=${{ env.dynamodb_table_name }}" \
+            -var="container_name=${{ env.container_name }}" \
+            -var="ecr_repository=${{ env.ecr_repository }}" \
+            -out=tfplan
 
-    - name: Upload Outputs to S3
-      run: |
-        OUTPUT_PATH="terraform/ce8-coaching-18/${{ env.environment }}/tf_output"
-        aws s3 cp tf_outputs.txt s3://${{ secrets.S3_BUCKET }}/${OUTPUT_PATH} --content-type text/plain
+      - name: Terraform Apply
+        run: terraform apply -auto-approve tfplan
+
+      - name: Generate Outputs
+        run: terraform output > tf_outputs.txt
+
+      - name: Upload Outputs to S3
+        run: |
+          OUTPUT_PATH="terraform/ce8-coaching-18/${{ env.environment }}/tf_output"
+          aws s3 cp tf_outputs.txt s3://${{ secrets.S3_BUCKET }}/${OUTPUT_PATH} --content-type text/plain

@@ -97,8 +97,3 @@ variable "assign_public_ip" {
   default     = true
 }
 
-variable "create_ecr" {
-  description = "Whether to create a new ECR repository"
-  type        = bool
-  default     = false
-}
