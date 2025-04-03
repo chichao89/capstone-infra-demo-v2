@@ -37,3 +37,12 @@ output "ecr_repository" {
   description = "The name of the shared ECR repository"
   value       = aws_ecr_repository.register_service_repo.name
 }
+output "alb_arn" {
+  description = "The ARN of the Application Load Balancer"
+  value       = aws_lb.app_alb.arn
+}
+
+output "alb_dns_name" {
+  description = "The DNS name of the Application Load Balancer"
+  value       = aws_lb.app_alb.dns_name
+}

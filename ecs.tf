@@ -53,7 +53,8 @@ resource "aws_ecs_task_definition" "app_task" {
   ])
 }
 
-# ECS Service
+
+# ECS Service with ALB Integration
 resource "aws_ecs_service" "register_app_service" {
   name            = var.ecs_service_name
   cluster         = aws_ecs_cluster.app_cluster.id
@@ -65,5 +66,11 @@ resource "aws_ecs_service" "register_app_service" {
     subnets          = module.vpc.public_subnets
     security_groups  = [aws_security_group.ecs_sg.id]
     assign_public_ip = var.assign_public_ip  # Assign public IP dynamically based on environment
+  }
+
+  load_balancer {
+    target_group_arn = aws_lb_target_group.ecs_tg.arn  # Reference the target group here
+    container_name   = var.container_name
+    container_port   = var.container_port
   }
 }
