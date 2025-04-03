@@ -7,5 +7,7 @@ resource "aws_lb" "app_alb" {
   enable_deletion_protection    = false
   enable_cross_zone_load_balancing = true
 
-  idle_timeout_seconds = 60  # Correct attribute for idle timeout
+  idle_timeout {
+    seconds = 60  # Set idle timeout in seconds using the correct block
+  }
 }
