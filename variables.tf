@@ -97,3 +97,8 @@ variable "assign_public_ip" {
   default     = true
 }
 
+#ALB 
+variable "alb_name" {
+  description = "ALB name"
+  type        = string
+}
