@@ -9,7 +9,7 @@ resource "aws_lb_target_group" "ecs_tg" {
   health_check {
     interval            = 30
     path                = "/health"  # Make sure you have a health check endpoint
-    port                = "traffic-port"
+    port                = var.container_port
     protocol            = "HTTP"
     timeout             = 5
     unhealthy_threshold = 2
