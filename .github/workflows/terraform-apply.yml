@@ -79,7 +79,7 @@ jobs:
             -var="dynamodb_table_name=${{ env.dynamodb_table_name }}" \
             -var="container_name=${{ env.container_name }}" \
             -var="ecr_repository=${{ env.ecr_repository }}" \
-            -var="alb_name=${{ env.ALB_NAME }}" \
+            -var="alb_name=${{ env.alb_name }}" \
             -out=tfplan
 
       - name: Terraform Apply
