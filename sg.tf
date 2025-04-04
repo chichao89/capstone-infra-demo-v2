@@ -47,11 +47,3 @@ resource "aws_security_group" "alb_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
-resource "aws_security_group_rule" "ecs_to_alb" {
-  type                     = "ingress"  # Allow inbound traffic
-  from_port                = 5001       # Port your app is running on
-  to_port                  = 5001
-  protocol                 = "tcp"
-  security_group_id       = aws_security_group.ecs_sg.id  # ECS task SG
-  source_security_group_id = aws_security_group.alb_sg.id      # ALB SG
-}
