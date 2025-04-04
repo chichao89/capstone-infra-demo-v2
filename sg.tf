@@ -19,7 +19,7 @@ resource "aws_security_group" "ecs_sg" {
     from_port   = 5001
     to_port     = 5001
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] # ⚠️ Open to all (use your IP for security)
+    security_groups = [aws_security_group.alb_sg.id]  //allow alb traffic
   }
 
   egress {
