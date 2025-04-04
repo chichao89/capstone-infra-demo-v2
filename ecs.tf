@@ -63,9 +63,9 @@ resource "aws_ecs_service" "register_app_service" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets          = module.vpc.public_subnets
+    subnets          = module.vpc.private_subnets
     security_groups  = [aws_security_group.ecs_sg.id]
-    assign_public_ip = var.assign_public_ip  # Assign public IP dynamically based on environment
+    assign_public_ip = false
   }
 
   load_balancer {
