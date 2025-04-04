@@ -1,5 +1,5 @@
 resource "aws_lb_target_group" "ecs_tg" {
-  name     = "ecs-target-group"
+  name     = var.target_group_name
   port     = var.container_port
   protocol = "HTTP"
   vpc_id   = module.vpc.vpc_id

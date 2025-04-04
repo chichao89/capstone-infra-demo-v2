@@ -58,6 +58,7 @@ jobs:
           echo "container_name=${{ github.event.inputs.environment }}-${{ vars.CONTAINER_NAME }}" >> $GITHUB_ENV
           echo "ecr_repository=${{ github.event.inputs.environment }}-${{ vars.ECR_REPOSITORY }}" >> $GITHUB_ENV
           echo "alb_name=${{ github.event.inputs.environment }}-${{ vars.ALB_NAME  }}" >> $GITHUB_ENV
+          echo "target_group_name=${{ github.event.inputs.environment }}-${{ vars.TARGET_GROUP_NAME }}" >> $GITHUB_ENV
 
       - name: Terraform Init
         run: |
@@ -80,6 +81,7 @@ jobs:
             -var="container_name=${{ env.container_name }}" \
             -var="ecr_repository=${{ env.ecr_repository }}" \
             -var="alb_name=${{ env.alb_name }}" \
+            -var="target_group_name=${{ env.target_group_name }}" \
             -out=tfplan
 
       - name: Terraform Apply

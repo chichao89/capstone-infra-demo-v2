@@ -49,3 +49,7 @@ output "alb_dns_name" {
   description = "The DNS name of the Application Load Balancer"
   value       = aws_lb.app_alb.dns_name
 }
+output "target_group_name" {
+  description = "Target group name"
+  value        = var.target_group_name
+}

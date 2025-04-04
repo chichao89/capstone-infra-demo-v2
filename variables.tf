@@ -96,3 +96,8 @@ variable "alb_name" {
   description = "ALB name"
   type        = string
 }
+
+variable "target_group_name" {
+  description = "Target group name"
+  type        = string
+}
