@@ -90,12 +90,6 @@ variable "aws_region" {
   default     = "ap-southeast-1"
 }
 
-# Whether to assign a public IP to ECS service
-variable "assign_public_ip" {
-  description = "Whether to assign a public IP to ECS service"
-  type        = bool
-  default     = true
-}
 
 #ALB 
 variable "alb_name" {
