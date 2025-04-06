@@ -48,17 +48,22 @@ jobs:
       - name: Run TFLint Check
         run: tflint --format=compact
 
-      - name: Set Terraform Backend Config
+      - name: Set Environment Variable
+        id: set_env
         run: |
-          echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_ENV
-          echo "ecs_cluster_name=${{ github.event.inputs.environment }}-${{ vars.ECS_CLUSTER_NAME }}" >> $GITHUB_ENV
-          echo "ecs_task_family=${{ github.event.inputs.environment }}-${{ vars.ECS_TASK_FAMILY }}" >> $GITHUB_ENV
-          echo "ecs_service_name=${{ github.event.inputs.environment }}-${{ vars.ECS_SERVICE_NAME }}" >> $GITHUB_ENV
-          echo "dynamodb_table_name=${{ github.event.inputs.environment }}-${{ vars.DYNAMODB_TABLE_NAME }}" >> $GITHUB_ENV
-          echo "container_name=${{ github.event.inputs.environment }}-${{ vars.CONTAINER_NAME }}" >> $GITHUB_ENV
-          echo "ecr_repository=${{ github.event.inputs.environment }}-${{ vars.ECR_REPOSITORY }}" >> $GITHUB_ENV
-          echo "alb_name=${{ github.event.inputs.environment }}-${{ vars.ALB_NAME  }}" >> $GITHUB_ENV
-          echo "target_group_name=${{ github.event.inputs.environment }}-${{ vars.TARGET_GROUP_NAME }}" >> $GITHUB_ENV
+          # Set environment to default to 'staging' if not provided
+          ENVIRONMENT="${{ github.event.inputs.environment || 'staging' }}"
+          # Remove trailing slashes
+          ENVIRONMENT="${ENVIRONMENT%/}"
+          echo "environment=$ENVIRONMENT" >> $GITHUB_ENV
+          echo "ecs_cluster_name=${ENVIRONMENT}-${{ vars.ECS_CLUSTER_NAME }}" >> $GITHUB_ENV
+          echo "ecs_task_family=${ENVIRONMENT}-${{ vars.ECS_TASK_FAMILY }}" >> $GITHUB_ENV
+          echo "ecs_service_name=${ENVIRONMENT}-${{ vars.ECS_SERVICE_NAME }}" >> $GITHUB_ENV
+          echo "dynamodb_table_name=${ENVIRONMENT}-${{ vars.DYNAMODB_TABLE_NAME }}" >> $GITHUB_ENV
+          echo "container_name=${ENVIRONMENT}-${{ vars.CONTAINER_NAME }}" >> $GITHUB_ENV
+          echo "ecr_repository=${ENVIRONMENT}-${{ vars.ECR_REPOSITORY }}" >> $GITHUB_ENV
+          echo "alb_name=${ENVIRONMENT}-${{ vars.ALB_NAME }}" >> $GITHUB_ENV
+          echo "target_group_name=${ENVIRONMENT}-${{ vars.TARGET_GROUP_NAME }}" >> $GITHUB_ENV
 
       - name: Terraform Init
         run: |
@@ -85,6 +90,7 @@ jobs:
             -out=tfplan
 
       - name: Terraform Apply
+        if: ${{ github.event.inputs.environment == 'staging' || github.event_name == 'workflow_dispatch' }}
         run: terraform apply -auto-approve tfplan
 
       - name: Generate Outputs
