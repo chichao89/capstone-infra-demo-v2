@@ -43,6 +43,8 @@ jobs:
           echo "ecs_service_name=${{ github.event.inputs.environment }}-${{ vars.ECS_SERVICE_NAME }}" >> $GITHUB_ENV
           echo "container_name=${{ github.event.inputs.environment }}-${{ vars.CONTAINER_NAME }}" >> $GITHUB_ENV
           echo "ecr_repository=${{ github.event.inputs.environment }}-${{ vars.ECR_REPOSITORY }}" >> $GITHUB_ENV
+          echo "alb_name=${{ github.event.inputs.environment }}-${{ vars.ALB_NAME  }}" >> $GITHUB_ENV
+          echo "target_group_name=${{ github.event.inputs.environment }}-${{ vars.TARGET_GROUP_NAME  }}" >> $GITHUB_ENV
           
       - name: Validate Environment Variables
         run: |
@@ -54,6 +56,8 @@ jobs:
           echo "Container: ${{ env.container_name }}"
           echo "ECR Repo: ${{ env.ecr_repository }}"
           echo "Create ECR: ${{ env.create_ecr }}"
+          echo "Create ALB : ${{ env.alb_name }}"
+          echo "Create target group : ${{ env.target_group_name }}"
 
       - name: Terraform Init
         run: |
@@ -81,4 +85,7 @@ jobs:
             -var="dynamodb_table_name=${{ env.dynamodb_table_name }}" \
             -var="ecs_service_name=${{ env.ecs_service_name }}" \
             -var="container_name=${{ env.container_name }}" \
-            -var="ecr_repository=${{ env.ecr_repository }}"
+            -var="ecr_repository=${{ env.ecr_repository }}" \
+            -var="alb_name=${{ env.alb_name }}" \
+            -var="target_group_name=${{ env.target_group_name }}"
+            
