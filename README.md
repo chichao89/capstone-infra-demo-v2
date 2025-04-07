@@ -21,6 +21,9 @@
   The deployment is fully automated via <strong>GitHub Actions</strong>, supporting separate environments for staging (automated) and production (manual approval).
 </p>
 
+<h2>System Architechture</h2>
+<img src="diagram/Group2Architechture.jpeg" alt="System Architecture Diagram" width="800">
+
 <!-- Why This Design (Startup Focus) -->
 <h2>Why This Design?</h2>
 <h3>Startup Use Case Alignment</h3>
