@@ -108,7 +108,7 @@ graph LR
 </ul>
 <h3>Network Design</h3>
 <ul>
-    <li>VPC with public/private subnets across 2 AZs.</li>
+    <li>VPC with public/private subnets across 3 AZs.</li>
     <li>ECS tasks run in private subnets while the ALB is placed in public subnets.</li>
     <li>Security groups ensure that only ALB traffic reaches ECS tasks.</li>
 </ul>
@@ -150,14 +150,14 @@ jobs:
 <h2>Terraform Configuration</h2>
 <h3>Environment Variables</h3>
 <pre>
-TF_VAR_ENVIRONMENT=staging         # or "production"
-TF_VAR_ECS_CLUSTER_NAME="ecs-cluster"
-TF_VAR_ECS_SERVICE_NAME="ecs-service"
-TF_VAR_ECS_TASK_FAMILY="ecs-task"
-TF_VAR_DYNAMODB_TABLE_NAME="users"
-TF_VAR_ECR_REPOSITORY="group2-register-service-ecr-repo"
-TF_VAR_ALB_NAME="app-alb"
-TF_VAR_TARGET_GROUP_NAME="ecs-target-group"
+ENVIRONMENT=staging         # or "production"
+ECS_CLUSTER_NAME="ecs-cluster"
+ECS_SERVICE_NAME="ecs-service"
+ECS_TASK_FAMILY="ecs-task"
+DYNAMODB_TABLE_NAME="users"
+ECR_REPOSITORY="group2-register-service-ecr-repo"
+ALB_NAME="app-alb"
+TARGET_GROUP_NAME="ecs-target-group"
 </pre>
 
 <h3>Terraform Outputs</h3>
