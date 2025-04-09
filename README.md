@@ -22,7 +22,7 @@
 </p>
 
 <h2>System Architechture</h2>
-<img src="diagram/Group2Architechture.jpeg" alt="System Architecture Diagram" width="800">
+<img src="diagram/Group2Architecture.png" alt="System Architecture Diagram">
 
 <!-- Why This Design (Startup Focus) -->
 <h2>Why This Design?</h2>
